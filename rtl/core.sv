@@ -16,17 +16,19 @@ module core(
     localparam logic [31:0] ALL1 = 32'hFFFF_FFFF; 
 
     logic [31:0] pc;
+    logic [31:0] next_pc;
+    logic pipe_flush;
 
     wire [4:0] opcode = i_data[6:2];
-    wire is_op_lui    = opcode == `OP_LUI;
-    wire is_op_auipc  = opcode == `OP_AUIPC;
-    wire is_op_jal    = opcode == `OP_JAL;
-    wire is_op_jalr   = opcode == `OP_JALR;
-    wire is_op_branch = opcode == `OP_BRANCH;
-    wire is_op_load   = opcode == `OP_LOAD;
-    wire is_op_store  = opcode == `OP_STORE;
-    wire is_op_imm    = opcode == `OP_IMM;
-    wire is_op_reg    = opcode == `OP_REG;
+    wire is_op_lui    = (opcode == `OP_LUI)     & ~pipe_flush;
+    wire is_op_auipc  = (opcode == `OP_AUIPC)   & ~pipe_flush;
+    wire is_op_jal    = (opcode == `OP_JAL)     & ~pipe_flush;
+    wire is_op_jalr   = (opcode == `OP_JALR)    & ~pipe_flush;
+    wire is_op_branch = (opcode == `OP_BRANCH)  & ~pipe_flush;
+    wire is_op_load   = (opcode == `OP_LOAD)    & ~pipe_flush;
+    wire is_op_store  = (opcode == `OP_STORE)   & ~pipe_flush;
+    wire is_op_imm    = (opcode == `OP_IMM)     & ~pipe_flush;
+    wire is_op_reg    = (opcode == `OP_REG)     & ~pipe_flush;
 
     logic op_lui  ;
     logic op_auipc;
@@ -51,9 +53,9 @@ module core(
 
     assign d_addr = reg_table[reg_src_sel1] + operand_imm_signed;
 
-    //first stage of pipeline
-
-    //decode the operation code
+    /****************************************************************************
+    *       Opcode Decoder
+    ****************************************************************************/
     always @(posedge clk or negedge rstb) begin
         if(~rstb) begin
             op_lui       <= 0;
@@ -78,6 +80,9 @@ module core(
         end
     end
 
+    /****************************************************************************
+    *       operand decoder
+    ****************************************************************************/
     always @(posedge clk or negedge rstb) begin
         if(~rstb) begin
             operand_imm_signed <= 0;
@@ -109,6 +114,9 @@ module core(
     wire signed [31:0] operand1 = reg_table[reg_src_sel1];
     wire signed [31:0] operand2 = op_reg ? reg_table[reg_src_sel2] : operand_imm_signed;
 
+    /****************************************************************************
+    *       alu
+    ****************************************************************************/
     always @(posedge clk or negedge rstb) begin
         if(~rstb) begin
             reg_table[31:1] <= 0;
@@ -138,10 +146,44 @@ module core(
         end
     end
 
-endmodule
+    /****************************************************************************
+    *         PC control (Jump or Branch)
+    ****************************************************************************/
+    wire operand_lt = operand1 < operand2;
+    wire operand_ltu = $unsigned(operand1) < $unsigned(operand2);
+    wire branch = op_branch & ( ( alu_func == 3'b000 && operand1 == operand2) |
+                                ( alu_func == 3'b001 && operand1 != operand2) |
+                                ( alu_func == 3'b100 && operand_lt)  |
+                                ( alu_func == 3'b101 && !operand_lt )  |
+                                ( alu_func == 3'b110 && operand_ltu ) |
+                                ( alu_func == 3'b111 && !operand_ltu ) );
+
     always @(posedge clk or negedge rstb) begin
         if(~rstb) begin
+            pc <= PC_INIT;
         end else begin
+            pc <= next_pc;
         end
     end
+
+    always @(*) begin
+        if(~rstb) begin
+            next_pc = PC_INIT;
+        end else begin
+            if(op_jal|op_jalr|branch) begin
+                next_pc = pc + operand_imm_signed;
+            end else begin
+                next_pc = pc + 4;
+            end
+        end
+    end 
+
+    assign i_addr = next_pc;
+
+    /****************************************************************************
+    *         Pipeline flush 
+    ****************************************************************************/
+    assign pipe_flush = op_jal | op_jalr | branch;
+
+endmodule
 

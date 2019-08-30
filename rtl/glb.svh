@@ -9,11 +9,13 @@
 `define OP_REG      5'b01_100
 
 //add or sub
-`define ALU_AOS    3'b000
-`define ALU_SLL    3'b001
-`define ALU_SLT    3'b010
-`define ALU_SLTU   3'b011
-`define ALU_XOR    3'b100
-`define ALU_SR     3'b101
-`define ALU_OR     3'b110
-`define ALU_AND    3'b111
+`define ALU_AOS     3'b000
+`define ALU_SLL     3'b001
+`define ALU_SLT     3'b010
+`define ALU_SLTU    3'b011
+`define ALU_XOR     3'b100
+`define ALU_SR      3'b101
+`define ALU_OR      3'b110
+`define ALU_AND     3'b111
+
+`define PC_INIT     0
