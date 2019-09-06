@@ -1,5 +1,7 @@
 *~
 *.pyc
+*.exe
 c
+emulator/xriscv
 !c/*.c
 !c/*.ld
