@@ -31,9 +31,11 @@ void get_operand(){
     operand2_unsigned = xreg[reg2_src_sel];
 }
 
-void decode(u32 code){
+void decode(){
+    u32 code;
     u8 opcode_4t2;
     u8 opcode_6t5;
+    code = ram[pc/4];
     opcode = get_bits(code,0,7);
     opcode_6t2 = get_bits(code,2,5);
     opcode_4t2 = get_bits(code,2,3);
@@ -80,7 +82,7 @@ void exec(){
     switch(opcode_6t2){
         case OP_LUI:
             xreg[reg_dest_sel] = imm_signed;
-            op += 4;
+            pc += 4;
             break;
         case OP_AUIPC:
             pc += imm_signed;
@@ -127,13 +129,99 @@ void exec(){
                 xreg[reg_dest_sel] = ram_data & 0xff;
             }else if(funct3 == 4){
                 xreg[reg_dest_sel] = ram_data & 0xffff;
+            }else{
+                log_error("OP_LOAD funct3 error\n");
             }
+            pc += 4;
             break;
         case OP_STORE:
-
+            if(funct3 == 0){
+                ram[xreg[reg1_src_sel]+imm_signed] = xreg[reg2_src_sel] & 0xff;
+            }else if(funct3 == 1){
+                ram[xreg[reg1_src_sel]+imm_signed] = xreg[reg2_src_sel] & 0xffff;
+            }else if(funct3 == 2){
+                ram[xreg[reg1_src_sel]+imm_signed] = xreg[reg2_src_sel];
+            }else{
+                log_error("OP_STORE funct3 error\n");
+            }
+            pc += 4;
+            break;
+        case OP_IMM:
+            if(funct3 == 0){
+                xreg[reg_dest_sel] = xreg[reg1_src_sel] + imm_signed;
+            }else if(funct3 == 1){
+                xreg[reg_dest_sel] = xreg[reg1_src_sel] << shamt;
+            }else if(funct3 ==2){
+                if(xreg[reg1_src_sel] < imm_signed){
+                    xreg[reg_dest_sel] = 1;
+                }else{
+                    xreg[reg_dest_sel] = 0;
+                }
+            }else if(funct3 == 3){
+                if((u32)xreg[reg1_src_sel] < imm_unsigned){
+                    xreg[reg_dest_sel] = 1;
+                }else{
+                    xreg[reg_dest_sel] = 0;
+                }
+            }else if(funct3 == 4){
+                xreg[reg_dest_sel] = (u32)xreg[reg1_src_sel] ^ imm_unsigned;
+            }else if(funct3 == 5){
+                if(funct7 == 0){
+                    xreg[reg_dest_sel] = xreg[reg1_src_sel] >> shamt;
+                }else{
+                    xreg[reg_dest_sel] = xreg[reg1_src_sel] >>> shamt;
+                }
+            }else if(funct3 == 6){
+                xreg[reg_dest_sel] = (u32)xreg[reg1_src_sel] | imm_unsigned;
+            }else if(funct3 == 7){
+                xreg[reg_dest_sel] = (u32)xreg[reg1_src_sel] & imm_unsigned;
+            }
+            pc += 4;
+            break;
+        case OP_REG:
+            if(funct3 == 0){
+                if(funct7 == 0){
+                    xreg[reg_dest_sel] = xreg[reg1_src_sel] + xreg[reg2_src_sel];
+                }else{
+                    xreg[reg_dest_sel] = xreg[reg1_src_sel] - xreg[reg2_src_sel];
+                }
+            }else if(funct3 == 1){
+                xreg[reg_dest_sel] = xreg[reg1_src_sel] << xreg[reg2_src_sel];
+            }else if(funct3 == 2){
+                if(xreg[reg1_src_sel] < xreg[reg2_src_sel]){
+                    xreg[reg_dest_sel] = 1;
+                }else{
+                    xreg[reg_dest_sel] = 0;
+                }
+            }else if(funct3 == 3){
+                if((u32)xreg[reg1_src_sel] < (u32)xreg[reg2_src_sel]){
+                    xreg[reg_dest_sel] = 1;
+                }else{
+                    xreg[reg_dest_sel] = 0;
+                }
+            }else if(funct3 == 4){
+                xreg[reg_dest_sel] = (u32)xreg[reg1_src_sel] ^ (u32)xreg[reg2_src_sel];
+            }else if(funct3 == 5){
+                if(funct7 == 0){
+                    xreg[reg_dest_sel] = xreg[reg1_src_sel] >> xreg[reg2_src_sel];
+                }else{
+                    xreg[reg_dest_sel] = xreg[reg1_src_sel] >>> xreg[reg2_src_sel];
+                }
+            }else if(funct3 == 6){
+                xreg[reg_dest_sel] = (u32)xreg[reg1_src_sel] | (u32)xreg[reg2_src_sel];
+            }else if(funct3 == 7){
+                xreg[reg_dest_sel] = (u32)xreg[reg1_src_sel] & (u32)xreg[reg2_src_sel];
+            }
+            pc += 4;
+            break;
     }
 }
 
 void main(){
+    while(1){
+        decode();
+        get_operand();
+        exec();
+    }
 }
 
