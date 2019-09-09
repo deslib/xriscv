@@ -6,6 +6,7 @@ typedef unsigned int u32;
 typedef char i8;
 typedef short i16;
 typedef int i32;
+typedef long long int i64;
 
 #define OP_LUI       0xd
 #define OP_AUIPC     0x5
