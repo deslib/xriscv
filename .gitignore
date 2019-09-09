@@ -5,3 +5,4 @@ c
 emulator/xriscv
 !c/*.c
 !c/*.ld
+!c/*.sh
