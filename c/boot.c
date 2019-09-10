@@ -1,10 +1,16 @@
 #include "xuart.h"
+#include <stdio.h>
 
 int boot(){
-    asm (
-        "lui a2,0x2\n\t"
-    );
-    xuart_puts("Hello XRISCV!");
+    u8 a;
+    u8 b;
+    u8 c;
+    a = 1;
+    b = 2;
+    xuart_puts("Hello XRISCV!\n");
+    c = a+b;
+    printf("%d+%d=%d",a,b,c);
+
     while(1){}
     return 0;
 }

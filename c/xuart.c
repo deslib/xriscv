@@ -1,18 +1,17 @@
+#include "regfile.h"
 #include "xuart.h"
 
-struct st_xuart * xuart = XUART_BASE_ADDR;
-
 void xuart_putchar(char c){
-    while(xuart->status & XUART_FULL_BIT);
-    xuart->send_byte = c;
+    while((regfile.xuart.status & XUART_FULL_BIT));
+    regfile.xuart.send_byte = c;
 }
 
 char xuart_getchar(){
-    while(xuart->status & XUART_EMPTY_BIT);
-    return xuart->rcvd_byte;
+    while((regfile.xuart.status & XUART_EMPTY_BIT));
+    return regfile.xuart.rcvd_byte;
 }
 
-void xuart_puts(char *str){
+void xuart_puts(const char *str){
     while(*str){
         xuart_putchar(*str++);
     }

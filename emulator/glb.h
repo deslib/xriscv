@@ -8,6 +8,20 @@ typedef short i16;
 typedef int i32;
 typedef long long int i64;
 
+#define TO_ROM 0
+#define TO_RAM 1
+
+#define DBYTE 0
+#define DHALF 1
+#define DWORD 2
+
+#define ROM_BASE_ADDR   0
+#define ROM_SIZE        0x800
+#define RAM_BASE_ADDR   0x800
+#define RAM_SIZE        0x800
+#define REG_BASE_ADDR   0x1000 
+#define REG_SIZE        0x400
+
 #define OP_LUI       0xd
 #define OP_AUIPC     0x5
 #define OP_JAL       0x1b
