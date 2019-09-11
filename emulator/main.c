@@ -160,7 +160,7 @@ void decode(){
         imm_signed = u2i(imm_unsigned,12);
         shamt = get_bits(code,20,5);
     }
-    printf("Tick = %d PC = %4x code=%08x rs = (%d,%d) rd = %d imm=(%u,%d) ",tick,pc,code,reg1_src_sel,reg2_src_sel,reg_dest_sel,imm_unsigned,imm_signed);
+    log_debug("Tick = %d PC = %4x code=%08x rs = (%d,%d) rd = %d imm=(%u,%d) ",tick,pc,code,reg1_src_sel,reg2_src_sel,reg_dest_sel,imm_unsigned,imm_signed);
     tick += 1;
     if(pc_prev == pc){
         dead_loop_cnt += 1;

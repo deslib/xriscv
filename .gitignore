@@ -3,6 +3,7 @@
 *.exe
 c
 emulator/xriscv
+emulator/uart.txt
 !c/*.c
 !c/*.ld
 !c/*.sh
