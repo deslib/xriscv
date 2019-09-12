@@ -77,7 +77,7 @@ void end_sim(){
     log_tested("Load  ", load_funct3_tested,5);
     log_tested("Store ", store_funct3_tested,3);
     log_tested("Imm   ", imm_funct3_tested,8);
-    log_tested("Reg   ", imm_funct3_tested,8);
+    log_tested("Reg   ", reg_funct3_tested,8);
     log_tested("Imm101", imm_101_funct7_tested,2);
     log_tested("Reg000", reg_000_funct7_tested,2);
     log_tested("Reg101", reg_101_funct7_tested,2);
