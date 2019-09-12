@@ -1,5 +1,6 @@
 #include "regfile.h"
 #include "xuart.h"
+#include "glb.h"
 
 void xuart_putchar(char c){
     while((regfile.xuart.status & XUART_FULL_BIT));

@@ -4,6 +4,7 @@
 c
 emulator/xriscv
 emulator/uart.txt
+emulator/*.log
 !c/*.c
 !c/*.ld
 !c/*.sh

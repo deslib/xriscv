@@ -37,7 +37,17 @@ void log_info(char *fmt, ...){
     if(LOG_LEVEL >= INFO){
         va_list args_list;
         va_start(args_list,fmt);
-        log_base("DEBUG",fmt,args_list);
+        log_base("INFO",fmt,args_list);
+        va_end(args_list);
+    }
+}
+
+void log_info_direct(char *fmt, ...){
+    if(LOG_LEVEL >= INFO){
+        va_list args_list;
+        va_start(args_list,fmt);
+        vsnprintf(new_message,MAX_LOG_SIZE,fmt,args_list);
+        printf("%s",new_message);
         va_end(args_list);
     }
 }
