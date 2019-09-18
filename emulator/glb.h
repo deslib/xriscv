@@ -22,6 +22,7 @@ typedef long long int i64;
 #define REG_BASE_ADDR   0x800 
 #define REG_SIZE        0x400
 
+// opcode >> 2
 #define OP_LUI       0xd
 #define OP_AUIPC     0x5
 #define OP_JAL       0x1b

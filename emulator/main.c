@@ -38,7 +38,7 @@ u8 opcode_6t2_tested[9] = {0,0,0,0,0,0,0,0,0};
 u8 branch_funct3_list[6] = {0,1,4,5,6,7};
 u8 branch_funct3_tested[6] = {0,0,0,0,0,0};
 
-u8 load_funct3_list[5] = {0,1,2,4,6};
+u8 load_funct3_list[5] = {0,1,2,4,5};
 u8 load_funct3_tested[5] = {0,0,0,0,0};
 
 u8 store_funct3_list[3] = {0,1,2};
@@ -90,6 +90,7 @@ void update_tested(u8 * list, u8 * tested, u8 len, u8 code){
     for(i=0;i<len;i++){
         if(code == *list){
             *tested = 1;
+            break;
         }
         list += 1;
         tested += 1;
@@ -138,7 +139,7 @@ u32 set_mem(u32 addr,u32 val,u8 type){
         }else{
             regfile[(addr-REG_BASE_ADDR)>>2] = val;
         }
-        if((addr & 0xfffc) == REG_BASE_ADDR){
+        if((addr & 0xfffc) == REG_BASE_ADDR){ //uart data register
             if((type == DBYTE) && ((addr & 3) == 1)){
                 uart_send_byte((u8)(val&0xff));
             }else if((type == DHALF) && (addr & 1) == 1){
@@ -156,8 +157,8 @@ u32 set_mem(u32 addr,u32 val,u8 type){
 void get_operand(){
     operand1_signed = xreg[reg1_src_sel];
     operand2_signed = xreg[reg2_src_sel];
-    operand1_unsigned = xreg[reg1_src_sel];
-    operand2_unsigned = xreg[reg2_src_sel];
+    operand1_unsigned = (u32) xreg[reg1_src_sel];
+    operand2_unsigned = (u32) xreg[reg2_src_sel];
 }
 
 i32 u2i(u32 uval, u8 length){
@@ -185,37 +186,33 @@ void decode(){
     reg2_src_sel = get_bits(code,20,5);
     funct3 = get_bits(code,12,3);
     funct7 = get_bits(code,25,7);
-    if(opcode_4t2 == 5){
+    if(opcode_4t2 == 5){ //lui and auipc
         imm_unsigned = code & 0xfffff000;
         imm_signed = (i32)imm_unsigned;
-    }else if(opcode_4t2 == 3){
+    }else if(opcode_4t2 == 3){ //jal, fence and fence.i
         imm_unsigned = (get_bits(code,12,8) << 12) | \
                      (get_bits(code,20,1) << 11) | \
                      (get_bits(code,21,10) << 1) | \
                      (get_bits(code,31,1) << 20);
         imm_signed = u2i(imm_unsigned,21);
-    }else if(opcode_4t2 == 1){
+    }else if(opcode_4t2 == 1){ //jalr
         imm_unsigned = get_bits(code,20,12);
         imm_signed = u2i(imm_unsigned,12);
     }else if(opcode_4t2 == 0){
-        if(opcode_6t5 == 3){
+        if(opcode_6t5 == 3){ //beq, bne, blt, bge, bltu and bgeu
             imm_unsigned = (get_bits(code,7,1) << 11) | \
                          (get_bits(code,8,4) << 1) | \
                          (get_bits(code,25,6) << 5) | \
                          (get_bits(code,31,1) << 12);
             imm_signed = u2i(imm_unsigned,13);
-        }else if(opcode_6t5 == 0){
-            if(funct3 == 4 || funct3 == 5){
-                imm_unsigned = get_bits(code,20,12);
-            }else{
-                imm_unsigned = get_bits(code,20,12);
-            }
+        }else if(opcode_6t5 == 0){ //lb, lh, lw, lbu and lhu
+            imm_unsigned = get_bits(code,20,12);
             imm_signed = u2i(imm_unsigned,12);
-        }else{
+        }else{ //sb, sh and sw
             imm_unsigned = (get_bits(code,25,7)<<5) | get_bits(code,7,5);
             imm_signed = u2i(imm_unsigned,12);
         }
-    }else if(opcode_4t2 == 4){
+    }else if(opcode_4t2 == 4){ //addi, slti, sltiu, xori, ori, andi, slli, srli and srai
         imm_unsigned = get_bits(code,20,12);
         imm_signed = u2i(imm_unsigned,12);
         shamt = get_bits(code,20,5);
@@ -236,40 +233,44 @@ void exec(){
     u8 i;
     u32 ram_addr;
     i32 ram_data;
-    u8 ram_data_ub;
     i8 ram_data_ib;
-    u16 ram_data_uh;
     u16 ram_data_ih;
     u32 ram_data_uw;
     u32 ram_data_iw;
     update_tested(opcode_6t2_list,opcode_6t2_tested,9,opcode_6t2);
     switch(opcode_6t2){
-        case OP_LUI:
+        case OP_LUI: //lui rd, immediate: x[rd] = sext(immediate[31:12] << 12)
             xreg[reg_dest_sel] = imm_signed;
             pc += 4;
             log_deep_debug_direct("LUI %04d\n",imm_signed);
             break;
-        case OP_AUIPC:
-            pc += imm_signed;
+        case OP_AUIPC: //auipc rd, immediate: x[rd] = pc + sext(immediate[31:12] << 12)
+            xreg[reg_dest_sel] = pc + imm_signed;
             log_deep_debug_direct("AUIPC %04d\n",imm_signed);
             break;
-        case OP_JAL:
+        case OP_JAL: //jal rd, offset: x[rd] = pc+4; pc += sext(offset)
             xreg[reg_dest_sel] = pc + 4;
             log_deep_debug_direct("JAL to (%08x,%08d)=%d. Store %08x to reg[%d]\n",pc,imm_signed,pc+imm_signed,pc+4,reg_dest_sel);
             pc += imm_signed;
             break;
-        case OP_JALR:
+        case OP_JALR: //jalr rd, offset(rs1): t =pc+4; pc=(x[rs1]+sext(offset))&~1; x[rd]=t
             xreg[reg_dest_sel] = pc + 4;
-            pc = (xreg[reg1_src_sel] + imm_signed);
-            log_deep_debug_direct("JALR (REG[%d]=%08x) to %04x. Store %08x to reg[%d]\n",reg1_src_sel,xreg[reg1_src_sel],pc,xreg[reg_dest_sel],reg_dest_sel);
+            pc = (operand1_signed + imm_signed) & -1;
+            log_deep_debug_direct("JALR (REG[%d]=%08x) to %04x. Store %08x to reg[%d]\n",reg1_src_sel,operand1_signed,pc,xreg[reg_dest_sel],reg_dest_sel);
             break;
         case OP_BRANCH:
             update_tested(branch_funct3_list,branch_funct3_tested,6,funct3);
             if((funct3 & 6) == 0){
+                //beq rs1, rs2, offset: if (rs1 == rs2) pc += sext(offset)
+                //bne rs1, rs2, offset: if (rs1 ≠ rs2) pc += sext(offset)
                 jmp = (funct3&1) ^ (operand1_signed == operand2_signed);
             }else if( (funct3 & 6) == 4){
+                //blt rs1, rs2, offset: if (rs1 <s rs2) pc += sext(offset)
+                //bge rs1, rs2, offset: if (rs1 ≥s rs2) pc += sext(offset)
                 jmp = (funct3&1) ^ (operand1_signed < operand2_signed);
             }else if( (funct3 & 6) == 6){
+                //bltu rs1, rs2, offset: if (rs1 <u rs2) pc += sext(offset)
+                //bgeu rs1, rs2, offset: if (rs1 ≥u rs2) pc += sext(offset)
                 jmp = (funct3&1) ^(operand1_unsigned < operand2_unsigned);
             }
             if(jmp){
@@ -281,81 +282,64 @@ void exec(){
             break;
         case OP_LOAD:
             update_tested(load_funct3_list,load_funct3_tested,5,funct3);
-            ram_addr =(xreg[reg1_src_sel] + imm_signed); 
-            ram_data = get_mem(ram_addr);
+            ram_addr =(operand1_signed + imm_signed); 
+            ram_data = (i32) get_mem(ram_addr);
             log_deep_debug_direct("Load %08x from %04x\n",ram_data,ram_addr);
-            if(funct3 == 0){
-                ram_data_ub = (ram_addr >> (8*(ram_addr&3))) & 0xff;
-                ram_data_ib = ram_data_ub;
-                if(ram_data < 0){
-                    xreg[reg_dest_sel] = ram_data_ib | 0xffffff80;
-                }else{
-                    xreg[reg_dest_sel] = ram_data_ib;
-                }
-            }else if(funct3 == 1){
-                ram_data_uh = (ram_addr >> (8*(ram_addr&3))) & 0xffff;
-                ram_data_ih = ram_data_uh;
-                if(ram_data < 0){
-                    xreg[reg_dest_sel] = ram_data_ih | 0xffff8000;
-                }else{
-                    xreg[reg_dest_sel] = ram_data_ih;
-                }
-            }else if(funct3 == 2){
+            if(funct3 == 0){ //lb rd, offset(rs1): x[rd] = sext(M[x[rs1] + sext(offset)][7:0])
+                ram_data_ib = (i8)(ram_data >> (8*(ram_addr&3))) & 0xff;
+                xreg[reg_dest_sel] = ram_data < 0? (ram_data_ib | 0xffffff80) : ram_data_ib;
+            }else if(funct3 == 1){ //lh rd, offset(rs1): x[rd] = sext(M[x[rs1] + sext(offset)][15:0])
+                ram_data_ih = (i16)(ram_data >> (8*(ram_addr&3))) & 0xffff;
+                xreg[reg_dest_sel] = ram_data < 0? (ram_data_ih | 0xffff8000) : ram_data_ih;
+            }else if(funct3 == 2){ //lw rd, offset(rs1): x[rd] = sext(M[x[rs1] + sext(offset)][31:0])
                 xreg[reg_dest_sel] = ram_data;
-            }else if(funct3 == 4){
-                xreg[reg_dest_sel] = (ram_data>>(8*(ram_addr&3))) & 0xff;
-            }else if(funct3 == 5){
-                xreg[reg_dest_sel] = (ram_data>>(8*(ram_addr&3))) & 0xffff;
+            }else if(funct3 == 4){ //lbu rd, offset(rs1): x[rd] = M[x[rs1] + sext(offset)][7:0]
+                xreg[reg_dest_sel] = (u8)(ram_data>>(8*(ram_addr&3))) & 0xff;
+            }else if(funct3 == 5){ //lhu rd, offset(rs1): x[rd] = M[x[rs1] + sext(offset)][15:0]
+                xreg[reg_dest_sel] = (u16)(ram_data>>(8*(ram_addr&3))) & 0xffff;
             }else{
                 log_error("OP_LOAD funct3 error\n");
+                exit(0);
             }
             pc += 4;
             break;
         case OP_STORE:
             update_tested(store_funct3_list,store_funct3_tested,3,funct3);
-            log_deep_debug_direct("Store %08x to %08x(%08x,%08x)\n",xreg[reg2_src_sel],xreg[reg1_src_sel]+imm_signed,xreg[reg1_src_sel],imm_signed);
-            if(funct3 == 0){
-                set_mem((xreg[reg1_src_sel]+imm_signed), xreg[reg2_src_sel],DBYTE);
-            }else if(funct3 == 1){
-                set_mem((xreg[reg1_src_sel]+imm_signed), xreg[reg2_src_sel],DHALF);
-            }else if(funct3 == 2){
-                set_mem((xreg[reg1_src_sel]+imm_signed), xreg[reg2_src_sel],DWORD);
+            log_deep_debug_direct("Store %08x to %08x(%08x,%08x)\n",operand2_signed,operand1_signed+imm_signed,operand1_signed,imm_signed);
+            if(funct3 == 0){ //sb rs2, offset(rs1): M[x[rs1]+sext(offset)=x[rs2][7:0]
+                set_mem((operand1_signed+imm_signed), operand2_signed, DBYTE);
+            }else if(funct3 == 1){ //sh rs2, offset(rs1): M[x[rs1]+sext(offset)=x[rs2][15:0]
+                set_mem((operand1_signed+imm_signed), operand2_signed, DHALF);
+            }else if(funct3 == 2){ //sw rs2, offset(rs1): M[x[rs1]+sext(offset)=x[rs2][31:0]
+                set_mem((operand1_signed+imm_signed), operand2_signed, DWORD);
             }else{
                 log_error("OP_STORE funct3 error\n");
+                exit(0);
             }
             pc += 4;
             break;
         case OP_IMM:
             update_tested(imm_funct3_list,imm_funct3_tested,8,funct3);
-            if(funct3 == 0){
-                xreg[reg_dest_sel] = xreg[reg1_src_sel] + imm_signed;
-            }else if(funct3 == 1){
-                xreg[reg_dest_sel] = xreg[reg1_src_sel] << shamt;
-            }else if(funct3 ==2){
-                if(xreg[reg1_src_sel] < imm_signed){
-                    xreg[reg_dest_sel] = 1;
-                }else{
-                    xreg[reg_dest_sel] = 0;
-                }
-            }else if(funct3 == 3){
-                if((u32)xreg[reg1_src_sel] < imm_unsigned){
-                    xreg[reg_dest_sel] = 1;
-                }else{
-                    xreg[reg_dest_sel] = 0;
-                }
-            }else if(funct3 == 4){
-                xreg[reg_dest_sel] = (u32)xreg[reg1_src_sel] ^ imm_unsigned;
-            }else if(funct3 == 5){
+            if(funct3 == 0){ //addi rd, rs1, immediate: x[rd] = x[rs1] + sext(immediate)
+                xreg[reg_dest_sel] = operand1_signed + imm_signed;
+            }else if(funct3 == 1){ //slli: x[rd]=x[rs1]≪shamt
+                xreg[reg_dest_sel] = operand1_signed << shamt;
+            }else if(funct3 ==2){ //slti rd, rs1, immediate: x[rd]=(x[rs1]<𝑠sext(immediate))
+                xreg[reg_dest_sel] = operand1_signed < imm_signed? 1 : 0;
+            }else if(funct3 == 3){ //sltiu rd, rs1, immediate: x[rd]=(x[rs1]<𝑢sext(immediate))
+                xreg[reg_dest_sel] = operand1_unsigned < imm_unsigned? 1 : 0;
+            }else if(funct3 == 4){ //xori rd, rs1, immediate: x[rd]=x[rs1] ^ sext(immediate)
+                xreg[reg_dest_sel] = operand1_signed ^ imm_signed;
+            }else if(funct3 == 5){ 
                 update_tested(imm_101_funct7_list,imm_101_funct7_tested,2,funct7);
-                //if(funct7 == 0){
-                    xreg[reg_dest_sel] = xreg[reg1_src_sel] >> shamt;
-                //}else{
-                //    xreg[reg_dest_sel] = xreg[reg1_src_sel] >>> shamt;
-                //}
-            }else if(funct3 == 6){
-                xreg[reg_dest_sel] = (u32)xreg[reg1_src_sel] | imm_unsigned;
-            }else if(funct3 == 7){
-                xreg[reg_dest_sel] = (u32)xreg[reg1_src_sel] & imm_unsigned;
+                xreg[reg_dest_sel] = operand1_signed >> shamt; //srli rd, rs1, shamt: x[rd]=(x[rs1]>>𝑢shamt)
+                if(funct7 == 1){ //srai rd, rs1, shamt: x[rd]=(x[rs1]>>𝑠shamt)
+                    xreg[reg_dest_sel] |= (operand1_signed & 0x800000000);
+                }
+            }else if(funct3 == 6){ //ori: x[rd]=x[rs1] | sext(immediate)
+                xreg[reg_dest_sel] = operand1_signed | imm_signed;
+            }else if(funct3 == 7){ //andi: x[rd] = x[rs1] & sext(immediate)
+                xreg[reg_dest_sel] = operand1_signed & imm_signed;
             }
             pc += 4;
             log_deep_debug_direct("IMM \n");
@@ -364,38 +348,31 @@ void exec(){
             update_tested(reg_funct3_list,reg_funct3_tested,8,funct3);
             if(funct3 == 0){
                 update_tested(reg_000_funct7_list,reg_000_funct7_tested,2,funct7);
-                if(funct7 == 0){
-                    xreg[reg_dest_sel] = xreg[reg1_src_sel] + xreg[reg2_src_sel];
-                }else{
-                    xreg[reg_dest_sel] = xreg[reg1_src_sel] - xreg[reg2_src_sel];
+                if(funct7 == 0){ //add rd, rs1, rs2: x[rd] = x[rs1] + x[rs2]
+                    xreg[reg_dest_sel] = operand1_signed + operand2_signed;
+                }else{ //sub rd, rs1, rs2: x[rd]=x[rs1]−x[rs2]
+                    xreg[reg_dest_sel] = operand1_signed - operand2_signed;
                 }
-            }else if(funct3 == 1){
-                xreg[reg_dest_sel] = xreg[reg1_src_sel] << xreg[reg2_src_sel];
-            }else if(funct3 == 2){
-                if(xreg[reg1_src_sel] < xreg[reg2_src_sel]){
-                    xreg[reg_dest_sel] = 1;
-                }else{
-                    xreg[reg_dest_sel] = 0;
-                }
-            }else if(funct3 == 3){
-                if((u32)xreg[reg1_src_sel] < (u32)xreg[reg2_src_sel]){
-                    xreg[reg_dest_sel] = 1;
-                }else{
-                    xreg[reg_dest_sel] = 0;
-                }
-            }else if(funct3 == 4){
-                xreg[reg_dest_sel] = (u32)xreg[reg1_src_sel] ^ (u32)xreg[reg2_src_sel];
-            }else if(funct3 == 5){
+            }else if(funct3 == 1){ //sll rd, rs1, rs2: x[rd]=x[rs1]<<x[rs2]
+                xreg[reg_dest_sel] = operand1_signed << (operand2_signed &0x1f);
+            }else if(funct3 == 2){ //slt rd, rs1, rs2: x[rd]=(x[rs1]<𝑠x[rs2])
+                xreg[reg_dest_sel] = operand1_signed < operand2_signed? 1: 0;
+            }else if(funct3 == 3){ //sltu rd, rs1, rs2: x[rd]=(x[rs1]<𝑢x[rs2])
+                xreg[reg_dest_sel] = operand1_unsigned < operand2_unsigned? 1: 0;
+            }else if(funct3 == 4){ //xor rd, rs1, rs2: x[rd]=x[rs1] ^ x[rs2]
+                xreg[reg_dest_sel] = operand1_unsigned ^ operand2_unsigned;
+            }else if(funct3 == 5){ 
                 update_tested(reg_101_funct7_list,reg_101_funct7_tested,2,funct7);
-                //if(funct7 == 0){
-                    xreg[reg_dest_sel] = xreg[reg1_src_sel] >> xreg[reg2_src_sel];
-                //}else{
-                //    xreg[reg_dest_sel] = xreg[reg1_src_sel] >>> xreg[reg2_src_sel];
-                //}
-            }else if(funct3 == 6){
-                xreg[reg_dest_sel] = (u32)xreg[reg1_src_sel] | (u32)xreg[reg2_src_sel];
-            }else if(funct3 == 7){
-                xreg[reg_dest_sel] = (u32)xreg[reg1_src_sel] & (u32)xreg[reg2_src_sel];
+                //srl rd, rs1, rs2: x[rd]=(x[rs1]>>𝑢x[rs2])
+                xreg[reg_dest_sel] = operand1_signed >> (operand2_signed & 0x1f);
+                if(funct7 == 1){
+                    //sra rd, rs1, rs2: x[rd]=(x[rs1]>>𝑠x[rs2])
+                    xreg[reg_dest_sel] |= (operand1_signed & 0x80000000);
+                }
+            }else if(funct3 == 6){ //or rd, rs1, rs2: x[rd]=x[rs1] | 𝑥[𝑟𝑠2]
+                xreg[reg_dest_sel] = operand1_unsigned | operand2_unsigned;
+            }else if(funct3 == 7){ //and rd, rs1, rs2: x[rd] = x[rs1] & x[rs2]
+                xreg[reg_dest_sel] = operand1_unsigned & operand2_unsigned;
             }
             pc += 4;
             log_deep_debug_direct("REG \n");
