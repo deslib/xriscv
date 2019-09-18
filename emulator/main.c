@@ -69,7 +69,7 @@ void log_tested(char * name, u8 *tested, u8 len){
 
 void end_sim(){
     u8 i;
-    log_info("Stop at tick=%d\n",tick);
+    log_info("Stop at tick=%d PC=%x\n",tick,pc);
     fclose(fp_uart);
 
     log_tested("Opcode", opcode_6t2_tested,8);
