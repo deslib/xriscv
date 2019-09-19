@@ -332,9 +332,11 @@ void exec(){
                 xreg[reg_dest_sel] = operand1_signed ^ imm_signed;
             }else if(funct3 == 5){ 
                 update_tested(imm_101_funct7_list,imm_101_funct7_tested,2,funct7);
-                xreg[reg_dest_sel] = operand1_signed >> shamt; //srli rd, rs1, shamt: x[rd]=(x[rs1]>>𝑢shamt)
-                if(funct7 == 1){ //srai rd, rs1, shamt: x[rd]=(x[rs1]>>𝑠shamt)
-                    xreg[reg_dest_sel] |= (operand1_signed & 0x800000000);
+                if(funct7 == 0){ //srli rd, rs1, shamt: x[rd]=(x[rs1]>>𝑢shamt)
+                    xreg[reg_dest_sel] = operand1_unsigned >> shamt;
+                }
+                else{ ////srai rd, rs1, shamt: x[rd]=(x[rs1]>>𝑠shamt)
+                    xreg[reg_dest_sel] = operand1_signed >> shamt; 
                 }
             }else if(funct3 == 6){ //ori: x[rd]=x[rs1] | sext(immediate)
                 xreg[reg_dest_sel] = operand1_signed | imm_signed;
@@ -363,11 +365,11 @@ void exec(){
                 xreg[reg_dest_sel] = operand1_unsigned ^ operand2_unsigned;
             }else if(funct3 == 5){ 
                 update_tested(reg_101_funct7_list,reg_101_funct7_tested,2,funct7);
-                //srl rd, rs1, rs2: x[rd]=(x[rs1]>>𝑢x[rs2])
-                xreg[reg_dest_sel] = operand1_signed >> (operand2_signed & 0x1f);
-                if(funct7 == 1){
-                    //sra rd, rs1, rs2: x[rd]=(x[rs1]>>𝑠x[rs2])
-                    xreg[reg_dest_sel] |= (operand1_signed & 0x80000000);
+                if(funct7 == 0){ //srl rd, rs1, rs2: x[rd]=(x[rs1]>>𝑢x[rs2])
+                    xreg[reg_dest_sel] = operand1_unsigned >> (operand2_unsigned & 0x1f);
+                }
+                else{ //sra rd, rs1, rs2: x[rd]=(x[rs1]>>𝑠x[rs2])
+                    xreg[reg_dest_sel] = operand1_signed >> (operand2_signed & 0x1f);
                 }
             }else if(funct3 == 6){ //or rd, rs1, rs2: x[rd]=x[rs1] | 𝑥[𝑟𝑠2]
                 xreg[reg_dest_sel] = operand1_unsigned | operand2_unsigned;
