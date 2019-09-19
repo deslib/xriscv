@@ -1,5 +1,6 @@
 #include "glb.h"
 #include <stdio.h>
+#include "test.h"
 
 void test_alu_16(){
     i16 ia;
@@ -74,7 +75,17 @@ void test_alu_32(){
     printf("\n");
 }
 
+void test_uiapc(){
+    u32 pc_symbol, pc_pc;
+    pc_symbol = auipc_test(0);
+    pc_pc = auipc_test(1);
+    if (pc_symbol != pc_pc) {
+        printf("auipc test failed, pc_symbol = %x, pc_pc = %x\n", pc_symbol, pc_pc);
+    }
+}
+
 void test(){
     test_alu_16();
     test_alu_32();
+    test_uiapc();
 }

@@ -69,7 +69,7 @@ void log_tested(char * name, u8 *tested, u8 len){
 
 void end_sim(){
     u8 i;
-    log_info("Stop at tick=%d\n",tick);
+    log_info("Stop at tick=%d, pc=0x%x\n",tick,pc);
     fclose(fp_uart);
 
     log_tested("Opcode", opcode_6t2_tested,8);
@@ -247,6 +247,7 @@ void exec(){
         case OP_AUIPC: //auipc rd, immediate: x[rd] = pc + sext(immediate[31:12] << 12)
             xreg[reg_dest_sel] = pc + imm_signed;
             log_deep_debug_direct("AUIPC %04d\n",imm_signed);
+            pc += 4;
             break;
         case OP_JAL: //jal rd, offset: x[rd] = pc+4; pc += sext(offset)
             xreg[reg_dest_sel] = pc + 4;

@@ -1,2 +1,2 @@
 void test();
-void test_alu();
+u32 auipc_test(u32);
