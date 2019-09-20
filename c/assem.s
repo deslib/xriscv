@@ -6,6 +6,7 @@
 .global lw_test
 .global lbu_test
 .global lhu_test
+
 .global addi_test
 .global slti_test
 .global sltiu_test
@@ -14,6 +15,17 @@
 .global slli_test
 .global srli_test
 .global srai_test
+
+.global add_test
+.global sub_test
+.global sll_test
+.global slt_test
+.global sltu_test
+.global xor_test
+.global srl_test
+.global sra_test
+.global or_test
+.global and_test
 
 
 # input: a0 - 0: get auipc symbol address / 1: get auipc pc
@@ -96,3 +108,42 @@ srai_test:
     srai a0, a0, 3
     ret
 
+add_test:
+    add a0, a0, a1
+    ret
+
+sub_test:
+    sub a0, a0, a1
+    ret
+
+sll_test:
+    sll a0, a0, a1
+    ret
+
+slt_test:
+    slt a0, a0, a1
+    ret
+
+sltu_test:
+    sltu a0, a0, a1
+    ret
+
+xor_test:
+    xor a0, a0, a1
+    ret
+
+srl_test:
+    srl a0, a0, a1
+    ret
+
+sra_test:
+    sra a0, a0, a1
+    ret
+
+or_test:
+    or a0, a0, a1
+    ret
+
+and_test:
+    and a0, a0, a1
+    ret

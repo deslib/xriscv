@@ -16,4 +16,13 @@ i32 slli_test(i32 data);
 i32 srli_test(i32 data);
 i32 srai_test(i32 data);
 
-
+i32 add_test(i32 data1, i32 data2);
+i32 sub_test(i32 data1, i32 data2);
+i32 sll_test(i32 data1, i32 data2);
+i32 slt_test(i32 data1, i32 data2);
+i32 sltu_test(i32 data1, i32 data2);
+i32 xor_test(i32 data1, i32 data2);
+i32 srl_test(i32 data1, i32 data2);
+i32 sra_test(i32 data1, i32 data2);
+i32 or_test(i32 data1, i32 data2);
+i32 and_test(i32 data1, i32 data2);

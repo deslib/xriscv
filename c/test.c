@@ -137,10 +137,47 @@ void test_imm(){
     }
 }
 
+void test_reg(){
+    i32 data1 = -1;
+    i32 data2 = -2;
+    if (add_test(data1, data2) != -3){ //-1+(-2)
+        printf("add test failed, data %x != -3\n",add_test(data1, data2));
+    }
+    if (sub_test(data1, data2) != 1){ //-1-(-2)
+        printf("sub test failed, data %x != 1\n",sub_test(data1, data2));
+    }
+    if (sll_test(data1, 3) != -8){ //-1<<3 (logic)
+        printf("sll test failed, data %x != -8\n",sll_test(data1, 3));
+    }
+    if (slt_test(data1, data2) != 0){ //-1<-2? 1 : 0 
+        printf("slt test failed, data %x != 0\n",slt_test(data1, data2));
+    }
+    if (sltu_test(data1, data2) != 0){ //0xffffffff<0xfffffffe? 1 : 0
+        printf("sltu test failed, data %x != 0\n",sltu_test(data1, data2));
+    }
+    if (xor_test(data1, data2) != 1){ //-1 xor -2
+        printf("xor test failed, data %x != 1\n",xor_test(data1, data2));
+    }
+    if (srl_test(data1, 3) != 0x1fffffff){ //-1>>3 (logic) 
+        printf("srl test failed, data %x != 0x1fffffff\n",srl_test(data1, data2));
+    }
+    if (sra_test(data1, 3) != -1){ //-1>>3 (math)
+        printf("sra test failed, data %x != -1\n",sra_test(data1, data2));
+    }
+    if (or_test(data1, data2) != -1){ //-1 or -2
+        printf("or test failed, data %x != -1\n",or_test(data1, data2));
+    }
+    if (and_test(data1, data2) != -2){ //-1 and -2
+        printf("and test failed, data %x != -2\n",and_test(data1, data2));
+    }
+}
+
+
 void test(){
     test_alu_16();
     test_alu_32();
     test_uiapc();
     test_load();
     test_imm();
+    test_reg();
 }
