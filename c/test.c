@@ -101,10 +101,39 @@ void test_load(){
         printf("lw test failed, addr = %x, data %x != %x\n",(u32)&data3, data3, lw_test((u32)&data3));
     }
     if (lbu_test((u32)&data4) != data4) {
-      printf("lbu test failed, addr = %x, data %x != %x\n",(u32)&data4, data4, lbu_test((u32)&data4));
+        printf("lbu test failed, addr = %x, data %x != %x\n",(u32)&data4, data4, lbu_test((u32)&data4));
     }
     if (lhu_test((u32)&data5) != data5) {
-      printf("lhu test failed, addr = %x, data %x != %x\n",(u32)&data5, data5, lhu_test((u32)&data5));
+        printf("lhu test failed, addr = %x, data %x != %x\n",(u32)&data5, data5, lhu_test((u32)&data5));
+    }
+}
+
+void test_imm(){
+    i32 data = -1;
+
+    if (addi_test(data) != 2){ //-1+3
+        printf("addi test failed, data %d != 2\n",addi_test(data));
+    }
+    if (slti_test(data) != 1){ //-1 < 3 ? 1 : 0
+        printf("slti test failed, data %d != 1\n",slti_test(data));
+    }
+    if (sltiu_test(data) != 0){ //0xffffffff < 3? 1 : 0
+        printf("sltiu test failed, data %d != 0\n",sltiu_test(data));
+    }
+    if (xori_test(data) != -4){ //0xffffffff xor 3
+        printf("xori test failed, data %d != -4\n",xori_test(data));
+    }
+    if (ori_test(data) != -1){ //-1 or 3
+        printf("ori test failed, data %d != -1\n",ori_test(data));
+    }
+    if (slli_test(data) != -8){ //-1<<3 (logic)
+        printf("slli test failed, data %d != -8\n",slli_test(data));
+    }
+    if (srli_test(data) != 0x1fffffff){ //-1>>3 (logic)
+        printf("srli test failed, data 0x%x != 0x1fffffff\n",srli_test(data));
+    }
+    if (srai_test(data) != -1){ //-1>>3 (math)
+        printf("srai test failed, data %d != -1\n",srai_test(data));
     }
 }
 
@@ -113,4 +142,5 @@ void test(){
     test_alu_32();
     test_uiapc();
     test_load();
+    test_imm();
 }
