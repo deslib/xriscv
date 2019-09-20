@@ -84,8 +84,33 @@ void test_uiapc(){
     }
 }
 
+void test_load(){
+    i8 data1 = -1;
+    i16 data2 = -2;
+    i32 data3 = -3;
+    u8 data4 = 4;
+    u16 data5 = 5;
+
+    if (lb_test((u32)&data1) != data1) {
+        printf("lb test failed, addr = %x, data %x != %x\n",(u32)&data1, data1, lb_test((u32)&data1));
+    }
+    if (lh_test((u32)&data2) != data2) {
+        printf("lh test failed, addr = %x, data %x != %x\n",(u32)&data2, data2, lh_test((u32)&data2));
+    }
+    if (lw_test((u32)&data3) != data3) {
+        printf("lw test failed, addr = %x, data %x != %x\n",(u32)&data3, data3, lw_test((u32)&data3));
+    }
+    if (lbu_test((u32)&data4) != data4) {
+      printf("lbu test failed, addr = %x, data %x != %x\n",(u32)&data4, data4, lbu_test((u32)&data4));
+    }
+    if (lhu_test((u32)&data5) != data5) {
+      printf("lhu test failed, addr = %x, data %x != %x\n",(u32)&data5, data5, lhu_test((u32)&data5));
+    }
+}
+
 void test(){
     test_alu_16();
     test_alu_32();
     test_uiapc();
+    test_load();
 }

@@ -285,19 +285,19 @@ void exec(){
             update_tested(load_funct3_list,load_funct3_tested,5,funct3);
             ram_addr =(operand1_signed + imm_signed); 
             ram_data = (i32) get_mem(ram_addr);
-            log_deep_debug_direct("Load %08x from %04x\n",ram_data,ram_addr);
+            log_deep_debug_direct("Load %08x from %08x\n",ram_data,ram_addr);
             if(funct3 == 0){ //lb rd, offset(rs1): x[rd] = sext(M[x[rs1] + sext(offset)][7:0])
-                ram_data_ib = (i8)(ram_data >> (8*(ram_addr&3))) & 0xff;
+                ram_data_ib = (i8)((ram_data >> (8*(ram_addr&3))) & 0xff);
                 xreg[reg_dest_sel] = ram_data < 0? (ram_data_ib | 0xffffff80) : ram_data_ib;
             }else if(funct3 == 1){ //lh rd, offset(rs1): x[rd] = sext(M[x[rs1] + sext(offset)][15:0])
-                ram_data_ih = (i16)(ram_data >> (8*(ram_addr&3))) & 0xffff;
+                ram_data_ih = (i16)((ram_data >> (8*(ram_addr&3))) & 0xffff);
                 xreg[reg_dest_sel] = ram_data < 0? (ram_data_ih | 0xffff8000) : ram_data_ih;
             }else if(funct3 == 2){ //lw rd, offset(rs1): x[rd] = sext(M[x[rs1] + sext(offset)][31:0])
                 xreg[reg_dest_sel] = ram_data;
             }else if(funct3 == 4){ //lbu rd, offset(rs1): x[rd] = M[x[rs1] + sext(offset)][7:0]
-                xreg[reg_dest_sel] = (u8)(ram_data>>(8*(ram_addr&3))) & 0xff;
+                xreg[reg_dest_sel] = (u8)((ram_data>>(8*(ram_addr&3))) & 0xff);
             }else if(funct3 == 5){ //lhu rd, offset(rs1): x[rd] = M[x[rs1] + sext(offset)][15:0]
-                xreg[reg_dest_sel] = (u16)(ram_data>>(8*(ram_addr&3))) & 0xffff;
+                xreg[reg_dest_sel] = (u16)((ram_data>>(8*(ram_addr&3))) & 0xffff);
             }else{
                 log_error("OP_LOAD funct3 error\n");
                 exit(0);
