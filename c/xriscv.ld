@@ -11,6 +11,7 @@ SECTIONS
     {
         startup.o
         boot.o(.text)
+        assem.o
 
     } > ROM
 

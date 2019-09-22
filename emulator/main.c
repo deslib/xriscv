@@ -69,7 +69,7 @@ void log_tested(char * name, u8 *tested, u8 len){
 
 void end_sim(){
     u8 i;
-    log_info("Stop at tick=%d PC=%x\n",tick,pc);
+    log_info("Stop at tick=%d, pc=0x%x\n",tick,pc);
     fclose(fp_uart);
 
     log_tested("Opcode", opcode_6t2_tested,8);
@@ -247,6 +247,7 @@ void exec(){
         case OP_AUIPC: //auipc rd, immediate: x[rd] = pc + sext(immediate[31:12] << 12)
             xreg[reg_dest_sel] = pc + imm_signed;
             log_deep_debug_direct("AUIPC %04d\n",imm_signed);
+            pc += 4;
             break;
         case OP_JAL: //jal rd, offset: x[rd] = pc+4; pc += sext(offset)
             xreg[reg_dest_sel] = pc + 4;
@@ -284,19 +285,19 @@ void exec(){
             update_tested(load_funct3_list,load_funct3_tested,5,funct3);
             ram_addr =(operand1_signed + imm_signed); 
             ram_data = (i32) get_mem(ram_addr);
-            log_deep_debug_direct("Load %08x from %04x\n",ram_data,ram_addr);
+            log_deep_debug_direct("Load %08x from %08x\n",ram_data,ram_addr);
             if(funct3 == 0){ //lb rd, offset(rs1): x[rd] = sext(M[x[rs1] + sext(offset)][7:0])
-                ram_data_ib = (i8)(ram_data >> (8*(ram_addr&3))) & 0xff;
+                ram_data_ib = (i8)((ram_data >> (8*(ram_addr&3))) & 0xff);
                 xreg[reg_dest_sel] = ram_data < 0? (ram_data_ib | 0xffffff80) : ram_data_ib;
             }else if(funct3 == 1){ //lh rd, offset(rs1): x[rd] = sext(M[x[rs1] + sext(offset)][15:0])
-                ram_data_ih = (i16)(ram_data >> (8*(ram_addr&3))) & 0xffff;
+                ram_data_ih = (i16)((ram_data >> (8*(ram_addr&3))) & 0xffff);
                 xreg[reg_dest_sel] = ram_data < 0? (ram_data_ih | 0xffff8000) : ram_data_ih;
             }else if(funct3 == 2){ //lw rd, offset(rs1): x[rd] = sext(M[x[rs1] + sext(offset)][31:0])
                 xreg[reg_dest_sel] = ram_data;
             }else if(funct3 == 4){ //lbu rd, offset(rs1): x[rd] = M[x[rs1] + sext(offset)][7:0]
-                xreg[reg_dest_sel] = (u8)(ram_data>>(8*(ram_addr&3))) & 0xff;
+                xreg[reg_dest_sel] = (u8)((ram_data>>(8*(ram_addr&3))) & 0xff);
             }else if(funct3 == 5){ //lhu rd, offset(rs1): x[rd] = M[x[rs1] + sext(offset)][15:0]
-                xreg[reg_dest_sel] = (u16)(ram_data>>(8*(ram_addr&3))) & 0xffff;
+                xreg[reg_dest_sel] = (u16)((ram_data>>(8*(ram_addr&3))) & 0xffff);
             }else{
                 log_error("OP_LOAD funct3 error\n");
                 exit(0);
@@ -332,9 +333,11 @@ void exec(){
                 xreg[reg_dest_sel] = operand1_signed ^ imm_signed;
             }else if(funct3 == 5){ 
                 update_tested(imm_101_funct7_list,imm_101_funct7_tested,2,funct7);
-                xreg[reg_dest_sel] = operand1_signed >> shamt; //srli rd, rs1, shamt: x[rd]=(x[rs1]>>𝑢shamt)
-                if(funct7 == 1){ //srai rd, rs1, shamt: x[rd]=(x[rs1]>>𝑠shamt)
-                    xreg[reg_dest_sel] |= (operand1_signed & 0x800000000);
+                if(funct7 == 0){ //srli rd, rs1, shamt: x[rd]=(x[rs1]>>𝑢shamt)
+                    xreg[reg_dest_sel] = operand1_unsigned >> shamt;
+                }
+                else{ ////srai rd, rs1, shamt: x[rd]=(x[rs1]>>𝑠shamt)
+                    xreg[reg_dest_sel] = operand1_signed >> shamt; 
                 }
             }else if(funct3 == 6){ //ori: x[rd]=x[rs1] | sext(immediate)
                 xreg[reg_dest_sel] = operand1_signed | imm_signed;
@@ -363,11 +366,11 @@ void exec(){
                 xreg[reg_dest_sel] = operand1_unsigned ^ operand2_unsigned;
             }else if(funct3 == 5){ 
                 update_tested(reg_101_funct7_list,reg_101_funct7_tested,2,funct7);
-                //srl rd, rs1, rs2: x[rd]=(x[rs1]>>𝑢x[rs2])
-                xreg[reg_dest_sel] = operand1_signed >> (operand2_signed & 0x1f);
-                if(funct7 == 1){
-                    //sra rd, rs1, rs2: x[rd]=(x[rs1]>>𝑠x[rs2])
-                    xreg[reg_dest_sel] |= (operand1_signed & 0x80000000);
+                if(funct7 == 0){ //srl rd, rs1, rs2: x[rd]=(x[rs1]>>𝑢x[rs2])
+                    xreg[reg_dest_sel] = operand1_unsigned >> (operand2_unsigned & 0x1f);
+                }
+                else{ //sra rd, rs1, rs2: x[rd]=(x[rs1]>>𝑠x[rs2])
+                    xreg[reg_dest_sel] = operand1_signed >> (operand2_signed & 0x1f);
                 }
             }else if(funct3 == 6){ //or rd, rs1, rs2: x[rd]=x[rs1] | 𝑥[𝑟𝑠2]
                 xreg[reg_dest_sel] = operand1_unsigned | operand2_unsigned;
