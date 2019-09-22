@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Regs</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <style>
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 5px;
+        }
+        table {
+            width: 1280px;
+            margin: 20px auto 20px auto;
+        }
+    </style>
+</head>
+<body>
+        <table>
+            <tr>
+                <td >Offset</td>
+                <td colspan="4">&#39;h0</td>
+            </tr>
+            <tr>
+                <th style="width:80px">Bits</th>
+                <th style="width:150px">Field Name</th>
+                <th style="width:60px">Attr</th>
+                <th style="width:80px">Default</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>[7, 0]</td>
+                <td>uart_status</td>
+                <td>ro</td>
+                <td>0</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>[15, 8]</td>
+                <td>uart_send_byte</td>
+                <td>rw</td>
+                <td>0</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>[23, 16]</td>
+                <td>uart_rcvd_byte</td>
+                <td>ro</td>
+                <td>0</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>[31, 24]</td>
+                <td>uart_cfg</td>
+                <td>rw</td>
+                <td>0</td>
+                <td></td>
+            </tr>
+        </table>
+</body>
+</html>

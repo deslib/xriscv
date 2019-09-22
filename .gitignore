@@ -2,6 +2,10 @@
 *.pyc
 *.exe
 c
+sim
+!sim/*.f
+!sim/*.sh
+!sim/*.do
 emulator/xriscv
 emulator/uart.txt
 emulator/*.log

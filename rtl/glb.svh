@@ -1,3 +1,5 @@
+`ifndef __GLB__
+
 `define OP_LUI      5'b01_101
 `define OP_AUIPC    5'b00_101
 `define OP_JAL      5'b11_011
@@ -19,3 +21,19 @@
 `define ALU_AND     3'b111
 
 `define PC_INIT     0
+
+`define ROM_BASE_ADDR   14'h0
+`define ROM_SIZE        14'h800
+`define RAM_BASE_ADDR   14'h1000
+`define RAM_SIZE        14'h1F000
+`define REG_BASE_ADDR   14'h800 
+`define REG_SIZE        14'h400
+
+`define LOG_CORE(x) \
+    `ifdef SIM \
+        $fwrite(fp,x) \
+    `endif
+
+`else
+    `define __GLB__
+`endif
