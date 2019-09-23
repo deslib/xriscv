@@ -3,7 +3,7 @@ import sys
 ROM_BASE_ADDR = 0x0
 ROM_SIZE      = 0x800
 RAM_BASE_ADDR = 0x1000
-RAM_SIZE      = 0x1000
+RAM_SIZE      = 0x1F000
 
 def bin2rxm(in_fn,rom_fn,ram_fn):
     with open(in_fn,'rb') as f:

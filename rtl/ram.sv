@@ -54,7 +54,7 @@ module ram_sdp #(
 )(
     input                                   clk,
     input                                   ena,
-    input [DATA_WIDTH/8-1:0]        wea,
+    input [DATA_WIDTH/8-1:0]                wea,
     input [ADDR_WIDTH-1:0]                  addra,
     input [DATA_WIDTH-1:0]                  dina,
     output logic signed [DATA_WIDTH-1:0]    douta,
@@ -76,11 +76,18 @@ module ram_sdp #(
         end
     end
 
-    always @(posedge clk) begin
-        if(ena) begin
-            ram_table[addra] <= dina;
+    genvar byte_i;
+    generate
+    for(byte_i=0;byte_i<(DATA_WIDTH/8-1);byte_i++) begin
+        always @(posedge clk) begin
+            if(ena) begin
+                if(wea[byte_i]) begin
+                    ram_table[addra][8*byte_i+7:8*byte_i] <= dina[8*byte_i+7:8*byte_i];
+                end
+            end
         end
     end
+    endgenerate
     
     always @(posedge clk) begin
         doutb <= ram_table[addrb];

@@ -166,4 +166,18 @@ regfile U_REGFILE(
     .rd_rdy(reg_rd_ready)
 );
 
+`ifdef SIM
+    integer fp;
+    initial begin
+        fp = $fopen("uart.txt","w");
+    end
+    always @(posedge clk) begin
+        if(reg_wr_en) begin
+            if(reg_addr == 0 && reg_wr_be == 4'b0010) begin
+                $fwrite(fp,"%c",reg_wr_data[15:8]);
+            end
+        end
+    end
+`endif
+
 endmodule

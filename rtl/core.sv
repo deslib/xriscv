@@ -176,37 +176,65 @@ module core(
 
     wire [1:0] laddr = operand1[1:0] + imm_signed[1:0];
     
-    always @(posedge clk) begin
-        d_wr_data <= operand2;
-    end
+    //always @(posedge clk) begin
+    //    d_wr_data <= operand2;
+    //end
 
-    always @(posedge clk or negedge rstb) begin
-        if(~rstb) begin
-            d_wr_be <= 0;
-        end else begin
-            d_wr_be <= funct3 == 0 ? 
+    assign d_wr_data = funct3 == 0 ? 
+                           (laddr == 0 ? {24'h0,operand2[7:0]} :
+                            laddr == 1 ? {16'h0,operand2[7:0],8'h0} :
+                            laddr == 2 ? {8'h0, operand2[7:0],16'h0} :
+                                         {operand2[7:0],24'h0}
+                           ) :
+                       funct3 == 1 ?
+                            (laddr[1] ? {operand2[15:0],16'h0} : {16'h0, operand2[15:0]}) : 
+                           operand2;
+
+
+
+    //always @(posedge clk or negedge rstb) begin
+    //    if(~rstb) begin
+    //        d_wr_be <= 0;
+    //    end else begin
+    //        d_wr_be <= funct3 == 0 ? 
+    //                    (laddr == 0 ? 4'h1 : 
+    //                    laddr == 1 ? 4'h2 :
+    //                    laddr == 2 ? 4'h4 : 4'h8) :
+    //                   funct3 == 1 ? 
+    //                       (laddr[1] ? 4'hc : 4'h3) :
+    //                   4'hf;
+    //    end
+    //end
+    
+    assign d_wr_be =  funct3 == 0 ? 
                         (laddr == 0 ? 4'h1 : 
                         laddr == 1 ? 4'h2 :
                         laddr == 2 ? 4'h4 : 4'h8) :
-                       funct3 == 1 ? 
+                      funct3 == 1 ? 
                            (laddr[1] ? 4'hc : 4'h3) :
-                       4'hf;
-        end
-    end
+                      4'hf;
+
+
+    //always @(posedge clk or negedge rstb) begin
+    //    if(~rstb) begin
+    //        d_wr_req <= 0;
+    //    end else begin
+    //        if(op_store & ~pipe_flush) begin
+    //            d_wr_req <= 1;
+    //        end else if(d_wr_ready)begin
+    //            d_wr_req <= 0;
+    //        end
+    //    end
+    //end
+    assign d_wr_req = op_store & ~pipe_flush;
+
+    //always @(posedge clk) begin
+    //    d_addr <= x[src1] + imm_signed;
+    //end
+    
+    assign d_addr = x[src1] + imm_signed;
+
      
-
-    always @(posedge clk or negedge rstb) begin
-        if(~rstb) begin
-            d_wr_req <= 0;
-        end else begin
-            if(op_store & ~pipe_flush) begin
-                d_wr_req <= 1;
-            end else if(d_wr_ready)begin
-                d_wr_req <= 0;
-            end
-        end
-    end
-
     always @(posedge clk or negedge rstb) begin
         if(~rstb) begin
             d_rd_req <= 0;
@@ -219,10 +247,6 @@ module core(
         end
     end
 
-    always @(posedge clk) begin
-        d_addr <= x[src1] + imm_signed;
-    end
-     
     `ifdef SIM
         always @(posedge clk) begin
             if(op_store & ~pipe_flush) begin
@@ -263,7 +287,7 @@ module core(
             end else if(op_jal|branch) begin
                 next_pc = pc + imm_signed - 4; //-4 because the pipe already added 4
             end else if(op_jalr) begin
-                next_pc = {jalr_addr[31:1],1'b0} - 4;
+                next_pc = {jalr_addr[31:1],1'b0};
             end else begin
                 next_pc = pc + 4;
             end

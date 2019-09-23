@@ -72,6 +72,6 @@ assign reg_rd_en = addr < `REG_BASE_ADDR ? rd_req : 0;
 
 // addr, addr
 assign ram_addr = (addr - `RAM_BASE_ADDR) >> 2;
-assign reg_addr = 16'h0 | (addr - `REG_BASE_ADDR);
+assign reg_addr = (16'h0 | (addr - `REG_BASE_ADDR)) & 16'hFFFC;
 
 endmodule
