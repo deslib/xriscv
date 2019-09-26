@@ -166,7 +166,7 @@ module core(
                                    funct3 == 3'b010 ? (operand1 < operand2 ? 32'h1 : 32'h0) :
                                    funct3 == 3'b011 ? ( ($unsigned(operand1) < $unsigned(operand2)) ? 32'h1 : 32'h0) :
                                    funct3 == 3'b100 ? operand1 ^ operand2 :
-                                   funct3 == 3'b101 ? operand1 >> operand2[4:0] :
+                                   funct3 == 3'b101 ? (funct7[5] ? operand1 >>> operand2[4:0] : operand1 >> operand2[4:0]) :
                                    funct3 == 3'b110 ? operand1 | operand2 :
                                                       operand1 & operand2;
                 end

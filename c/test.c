@@ -174,10 +174,10 @@ void test_reg(){
 
 
 void test(){
-    test_alu_16();
-    test_alu_32();
+    test_imm();
     test_uiapc();
     test_load();
-    test_imm();
     test_reg();
+    test_alu_16();
+    test_alu_32();
 }
