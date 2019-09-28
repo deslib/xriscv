@@ -1,1 +1,1 @@
-lui sp,20
+lui sp,8

@@ -18,6 +18,7 @@ void log_info(char *fmt, ...);
 void log_info_direct(char *fmt, ...);
 void log_error(char *fmt, ...);
 void log_base(char *level, char *fmt, va_list args_list);
+void log_debug_direct(char *fmt,...);
 void log_deep_debug_direct(char *fmt,...);
 
 #else

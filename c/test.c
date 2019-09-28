@@ -50,7 +50,7 @@ void test_alu_32(){
     u32 target_sum = 0xff*0x80*0x102;
 
     printf("Test 32 bit ALU\n");
-    for(i=0;i<0x100;i++){
+    for(i=0;i<0x10;i++){
         ia = i;
         ib = i*0x101;
         ua = i;
@@ -174,10 +174,10 @@ void test_reg(){
 
 
 void test(){
-    test_alu_16();
-    test_alu_32();
+    test_imm();
     test_uiapc();
     test_load();
-    test_imm();
     test_reg();
+    test_alu_16();
+    test_alu_32();
 }
