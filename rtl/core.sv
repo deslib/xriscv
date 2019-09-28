@@ -24,7 +24,7 @@ module core(
     logic pipe_flush_pre;
     logic pipe_flush;
 
-    `ifdef SIM
+    `ifdef DBG
         integer fp;
         integer tick;
         initial begin
@@ -100,7 +100,7 @@ module core(
             imm_signed   <= (is_op_lui | is_op_auipc)         ? {i_data[31:12],ALL0[11:0]} :
                             (is_op_jal)                       ? {i_data[31] ? ALL1[31:21]:ALL0[31:21], i_data[31],i_data[19:12],i_data[20],i_data[30:21],1'b0} :
                             (is_op_jalr|is_op_imm|is_op_load) ? {i_data[31] ? ALL1[31:12]:ALL0[31:12], i_data[31:20]} :
-                            (is_op_branch)                    ? {i_data[31] ? ALL1[31:21]:ALL0[31:12], i_data[31],i_data[7],i_data[30:25],i_data[11:8],1'b0} :
+                            (is_op_branch)                    ? {i_data[31] ? ALL1[31:12]:ALL0[31:12], i_data[31],i_data[7],i_data[30:25],i_data[11:8],1'b0} :
                             (is_op_store)                     ? {i_data[31] ? ALL1[31:12]:ALL0[31:12], i_data[31:25], i_data[11:7]} : 32'h0;
 
             imm_unsigned <= (is_op_lui | is_op_auipc)         ? {i_data[31:12],ALL0[11:0]} :
@@ -124,6 +124,7 @@ module core(
     /****************************************************************************
     *       alu
     ****************************************************************************/
+    wire [31:0] operand_rs =(funct7[5] ? operand1 >>> operand2[4:0] : operand1 >> operand2[4:0]);
     always @(posedge clk or negedge rstb) begin
         if(~rstb) begin
             x_reg[31:1] <= 0;
@@ -155,7 +156,7 @@ module core(
                     x_reg[dest] <= imm_signed;
                     `LOG_CORE($sformatf("PC=%05x LUI\n",prev_pc));
                 end else if(op_auipc) begin
-                    x_reg[dest] <= pc + imm_signed;
+                    x_reg[dest] <= pc + $signed(imm_signed&32'hFFFFF000) - 4;
                     `LOG_CORE($sformatf("PC=%05x AUIPC \n",prev_pc));
                 end else if(op_jal|op_jalr) begin
                     x_reg[dest] <= pc;
@@ -166,7 +167,7 @@ module core(
                                    funct3 == 3'b010 ? (operand1 < operand2 ? 32'h1 : 32'h0) :
                                    funct3 == 3'b011 ? ( ($unsigned(operand1) < $unsigned(operand2)) ? 32'h1 : 32'h0) :
                                    funct3 == 3'b100 ? operand1 ^ operand2 :
-                                   funct3 == 3'b101 ? (funct7[5] ? operand1 >>> operand2[4:0] : operand1 >> operand2[4:0]) :
+                                   funct3 == 3'b101 ? operand_rs :
                                    funct3 == 3'b110 ? operand1 | operand2 :
                                                       operand1 & operand2;
                 end
@@ -247,7 +248,7 @@ module core(
         end
     end
 
-    `ifdef SIM
+    `ifdef DBG
         always @(posedge clk) begin
             if(op_store & ~pipe_flush) begin
                 `LOG_CORE($sformatf("PC=%05x OP_STORE %08x to %08x\n",prev_pc,operand2,x[src1]+imm_signed));
@@ -299,7 +300,7 @@ module core(
     /****************************************************************************
     *         Pipeline flush 
     ****************************************************************************/
-    assign pipe_flush_pre = op_jal | op_jalr | branch;
+    assign pipe_flush_pre = (op_jal | op_jalr | branch) & ~pipe_flush;
     //logic pipe_flush_pre_dly;
     //always @(posedge clk or negedge rstb) begin
     //    if(~rstb) begin
@@ -321,6 +322,24 @@ module core(
         end
     end
      
+    `ifdef DBG
+
+        integer fp_pc;
+        initial begin
+            fp_pc = $fopen("pc.log","w");
+        end
+        logic [1:0][31:0] dbg_pc_pipe;
+        always @(posedge clk) begin
+            dbg_pc_pipe <= {dbg_pc_pipe[0],pc};
+            if(pc != 0 && ~pipe_flush && ~(~d_rd_req&d_rd_ready)) begin
+                $fwrite(fp_pc,"%0x ",dbg_pc_pipe[0]);
+                for(int i=0;i<32;i++) begin
+                    $fwrite(fp_pc,"%08x ",x[i]);
+                end
+                $fwrite(fp_pc,"\n");
+            end
+        end
+    `endif
      
 
 endmodule

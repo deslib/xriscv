@@ -71,6 +71,17 @@ void log_deep_debug_direct(char *fmt,...){
     }
 }
 
+void log_debug_direct(char *fmt,...){
+    if(LOG_LEVEL >= DEBUG){
+        va_list args_list;
+        va_start(args_list,fmt);
+        vsnprintf(new_message,MAX_LOG_SIZE,fmt,args_list);
+        printf("%s",new_message);
+        va_end(args_list);
+    }
+}
+
+
 void get_cur_time(char *time_str){
     time_t rawtime;
     struct tm *timeinfo;

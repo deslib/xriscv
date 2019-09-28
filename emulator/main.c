@@ -58,6 +58,8 @@ u8 reg_101_funct7_tested[8] = {0,0};
 
 FILE *fp_uart;
 
+FILE *fp_pc; //for rtl debug
+
 void log_tested(char * name, u8 *tested, u8 len){
     int i;
     log_info("Tested %s: ",name);
@@ -71,6 +73,7 @@ void end_sim(){
     u8 i;
     log_info("Stop at tick=%d, pc=0x%x\n",tick,pc);
     fclose(fp_uart);
+    fclose(fp_pc);
 
     log_tested("Opcode", opcode_6t2_tested,8);
     log_tested("Branch", branch_funct3_tested,6);
@@ -383,11 +386,11 @@ void exec(){
     }
     xreg[0] = 0;// some instruction will set reg[0]. But it is hard wired as 0 in hardware;
 
-    log_deep_debug_direct("XREG\n");
+    log_debug_direct("XREG\n");
     for(i=0;i<32;i++){
-        log_deep_debug_direct("%08x ",xreg[i]);
+        log_debug_direct("%08x ",xreg[i]);
         if((i%8) == 7){
-            log_deep_debug_direct("\n");
+            log_debug_direct("\n");
         }
     }
     log_deep_debug_direct("\n");
@@ -451,6 +454,14 @@ void init(){
         regfile[0] = 0x0000000; //status
     }
     fp_uart = fopen("uart.txt","w");
+    fp_pc = fopen("pc.txt","w");
+}
+
+void print_reg_to_file(FILE *f){
+    int i;
+    for(i=0;i<32;i++){
+        fprintf(f,"%08x ",xreg[i]);
+    }
 }
 
 void main(){
@@ -460,9 +471,12 @@ void main(){
     rom_length = read2rxm("../c/xriscv.rom",TO_ROM);
     read2rxm("../c/xriscv.ram",TO_RAM);
     while(1){
+        fprintf(fp_pc,"%x ",pc);
         decode();
         get_operand();
         exec();
+        print_reg_to_file(fp_pc);
+        fprintf(fp_pc,"\n");
     }
 }
 

@@ -2,9 +2,9 @@
 
 module soc#(
     parameter XLEN = 32,
-    parameter ADDR_LEN = 14,
+    parameter ADDR_LEN = 16,
     parameter ROM_ADDR_LEN = 12,
-    parameter RAM_ADDR_LEN = 12
+    parameter RAM_ADDR_LEN = ADDR_LEN-2
 )(
     input clk,
     input rstb_in,
@@ -63,11 +63,8 @@ wire rstb = rstb_in_pipe[1];
 
 i_mux #(
     .XLEN(32),
-    .ADDR_LEN(14)
+    .ADDR_LEN(ADDR_LEN)
 )U_I_MUX(
-    .clk(clk),
-    .rstb(rstb),
-
     .addr(i_addr[ADDR_LEN-1:0]),
     .rd_data(i_data),
 
@@ -79,7 +76,7 @@ i_mux #(
 
 d_mux#(
     .XLEN(32),
-    .ADDR_LEN(14)
+    .ADDR_LEN(ADDR_LEN)
 )U_D_MUX(
     .clk(clk),
     .rstb(rstb),
@@ -149,6 +146,9 @@ rom #(
     .addr(i_rom_addr),
     .dout(i_rom_data)
 );
+
+assign uart_status = 0;
+assign uart_rcvd_byte = 0;
 
 regfile U_REGFILE(
     .clk(clk),

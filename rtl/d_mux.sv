@@ -35,12 +35,17 @@ module d_mux#(
     
 // ready
 logic ram_rd_ready;
+logic ram_rd_req;
 wire d_wr_ready = 1;
 always @(posedge clk or negedge rstb) begin
     if(~rstb) begin
         ram_rd_ready <= 0;
     end else begin
-        ram_rd_ready <= rd_req;
+        if(ram_rd_req&ram_rd_ready) begin
+            ram_rd_ready <= 0;
+        end else if(ram_rd_req) begin
+            ram_rd_ready <= 1;
+        end
     end
 end
 
@@ -62,13 +67,14 @@ assign reg_wr_en = d_is_from_reg ? wr_req : 0;
 assign reg_wr_be = wr_be;
 
 assign ram_en = d_is_from_reg ? 0 : (wr_req | rd_req);
+assign ram_rd_req = d_is_from_reg ? 0 : rd_req;
 assign ram_we = wr_req ? wr_be : 0;
 
 assign reg_wr_data = wr_data;
 assign ram_wr_data = wr_data;
 
 // reg_rd_en
-assign reg_rd_en = addr < `REG_BASE_ADDR ? rd_req : 0;
+assign reg_rd_en = d_is_from_reg ? rd_req : 0;
 
 // addr, addr
 assign ram_addr = (addr - `RAM_BASE_ADDR) >> 2;

@@ -27,7 +27,7 @@ module ram #(
 
     genvar byte_i;
     generate
-    for(byte_i=0;byte_i<(DATA_WIDTH/8-1);byte_i++) begin
+    for(byte_i=0;byte_i<(DATA_WIDTH/8);byte_i++) begin
         always @(posedge clk) begin
             if(en) begin
                 if(we[byte_i]) begin
@@ -78,7 +78,7 @@ module ram_sdp #(
 
     genvar byte_i;
     generate
-    for(byte_i=0;byte_i<(DATA_WIDTH/8-1);byte_i++) begin
+    for(byte_i=0;byte_i<(DATA_WIDTH/8);byte_i++) begin
         always @(posedge clk) begin
             if(ena) begin
                 if(wea[byte_i]) begin

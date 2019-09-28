@@ -22,12 +22,12 @@
 
 `define PC_INIT     0
 
-`define ROM_BASE_ADDR   14'h0
-`define ROM_SIZE        14'h800
-`define RAM_BASE_ADDR   14'h1000
-`define RAM_SIZE        14'h1F000
-`define REG_BASE_ADDR   14'h800 
-`define REG_SIZE        14'h400
+`define ROM_BASE_ADDR   16'h0
+`define ROM_SIZE        16'h800
+`define RAM_BASE_ADDR   16'h4000
+`define RAM_SIZE        16'h4000
+`define REG_BASE_ADDR   16'h800 
+`define REG_SIZE        16'h400
 
 `define LOG_CORE(x) \
     `ifdef SIM \

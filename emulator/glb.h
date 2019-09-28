@@ -17,8 +17,8 @@ typedef long long int i64;
 
 #define ROM_BASE_ADDR   0
 #define ROM_SIZE        0x800
-#define RAM_BASE_ADDR   0x1000
-#define RAM_SIZE        0x1F000
+#define RAM_BASE_ADDR   0x4000
+#define RAM_SIZE        0x4000
 #define REG_BASE_ADDR   0x800 
 #define REG_SIZE        0x400
 

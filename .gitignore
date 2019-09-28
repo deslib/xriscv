@@ -9,6 +9,7 @@ sim
 emulator/xriscv
 emulator/uart.txt
 emulator/*.log
+emulator/*.txt
 !c/*.c
 !c/*.ld
 !c/*.sh
