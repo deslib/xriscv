@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "logger.h"
 #include "utils.h"
+#include "csr.h"
 
 i32 imm_signed = 0;
 u32 imm_unsigned = 0;
@@ -450,6 +451,9 @@ void init(){
     for(i=0;i<10;i++){
         regfile[0] = 0x0000000; //status
     }
+    
+    csr_init();
+
     fp_uart = fopen("uart.txt","w");
 }
 
