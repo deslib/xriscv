@@ -29,14 +29,18 @@ module d_mux#(
     output logic [XLEN-1:0]     reg_wr_data,
     output logic                reg_rd_en,
     input        [XLEN-1:0]     reg_rd_data,
-    input                       reg_rd_ready
+    input                       reg_rd_ready,
+    input                       reg_wr_ready
 );
 
     
 // ready
 logic ram_rd_ready;
 logic ram_rd_req;
-wire d_wr_ready = 1;
+wire  ram_wr_ready = 1;
+wire d_is_from_reg = addr < `RAM_BASE_ADDR;
+logic d_is_from_reg_dly;
+
 always @(posedge clk or negedge rstb) begin
     if(~rstb) begin
         ram_rd_ready <= 0;
@@ -50,12 +54,10 @@ always @(posedge clk or negedge rstb) begin
 end
 
 assign rd_ready = ram_rd_ready | reg_rd_ready;
-assign wr_ready = 1;
+assign wr_ready = d_is_from_reg ? reg_wr_ready : ram_wr_ready;
  
 
 // rd_data
-wire d_is_from_reg = addr < `RAM_BASE_ADDR;
-logic d_is_from_reg_dly;
 
 always @(posedge clk) begin
     d_is_from_reg_dly <= d_is_from_reg;

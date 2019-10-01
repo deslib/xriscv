@@ -73,13 +73,14 @@ module core(
 
     wire wait_rd_data = d_rd_req & ~d_rd_ready;
     wire wait_wr_data = d_wr_req & ~d_wr_ready;
+    wire stalling = wait_rd_data | wait_wr_data;
 
 
     /****************************************************************************
     *       Opcode Decoder
     ****************************************************************************/
     always @(posedge clk) begin
-        if(~wait_rd_data) begin
+        if(~stalling) begin
             op_lui       <= is_op_lui;
             op_auipc     <= is_op_auipc;
             op_jal       <= is_op_jal;
@@ -96,7 +97,7 @@ module core(
     *       operand decoder
     ****************************************************************************/
     always @(posedge clk) begin
-        if(~wait_rd_data) begin //wait load data
+        if(~stalling) begin //wait load data
             imm_signed   <= (is_op_lui | is_op_auipc)         ? {i_data[31:12],ALL0[11:0]} :
                             (is_op_jal)                       ? {i_data[31] ? ALL1[31:21]:ALL0[31:21], i_data[31],i_data[19:12],i_data[20],i_data[30:21],1'b0} :
                             (is_op_jalr|is_op_imm|is_op_load) ? {i_data[31] ? ALL1[31:12]:ALL0[31:12], i_data[31:20]} :
@@ -177,10 +178,6 @@ module core(
 
     wire [1:0] laddr = operand1[1:0] + imm_signed[1:0];
     
-    //always @(posedge clk) begin
-    //    d_wr_data <= operand2;
-    //end
-
     assign d_wr_data = funct3 == 0 ? 
                            (laddr == 0 ? {24'h0,operand2[7:0]} :
                             laddr == 1 ? {16'h0,operand2[7:0],8'h0} :
@@ -191,22 +188,6 @@ module core(
                             (laddr[1] ? {operand2[15:0],16'h0} : {16'h0, operand2[15:0]}) : 
                            operand2;
 
-
-
-    //always @(posedge clk or negedge rstb) begin
-    //    if(~rstb) begin
-    //        d_wr_be <= 0;
-    //    end else begin
-    //        d_wr_be <= funct3 == 0 ? 
-    //                    (laddr == 0 ? 4'h1 : 
-    //                    laddr == 1 ? 4'h2 :
-    //                    laddr == 2 ? 4'h4 : 4'h8) :
-    //                   funct3 == 1 ? 
-    //                       (laddr[1] ? 4'hc : 4'h3) :
-    //                   4'hf;
-    //    end
-    //end
-    
     assign d_wr_be =  funct3 == 0 ? 
                         (laddr == 0 ? 4'h1 : 
                         laddr == 1 ? 4'h2 :
@@ -216,23 +197,8 @@ module core(
                       4'hf;
 
 
-    //always @(posedge clk or negedge rstb) begin
-    //    if(~rstb) begin
-    //        d_wr_req <= 0;
-    //    end else begin
-    //        if(op_store & ~pipe_flush) begin
-    //            d_wr_req <= 1;
-    //        end else if(d_wr_ready)begin
-    //            d_wr_req <= 0;
-    //        end
-    //    end
-    //end
     assign d_wr_req = op_store & ~pipe_flush;
 
-    //always @(posedge clk) begin
-    //    d_addr <= x[src1] + imm_signed;
-    //end
-    
     assign d_addr = x[src1] + imm_signed;
 
      
@@ -283,7 +249,7 @@ module core(
         end else begin
             if(pipe_flush) begin
                 next_pc = pc + 4;
-            end else if(wait_rd_data|wait_wr_data) begin
+            end else if(stalling) begin
                 next_pc = pc;
             end else if(op_jal|branch) begin
                 next_pc = pc + imm_signed - 4; //-4 because the pipe already added 4
@@ -301,15 +267,6 @@ module core(
     *         Pipeline flush 
     ****************************************************************************/
     assign pipe_flush_pre = (op_jal | op_jalr | branch) & ~pipe_flush;
-    //logic pipe_flush_pre_dly;
-    //always @(posedge clk or negedge rstb) begin
-    //    if(~rstb) begin
-    //        pipe_flush_pre_dly <= 0;
-    //    end else begin
-    //        pipe_flush_pre_dly <= pipe_flush_pre;
-    //    end
-    //end
-    //assign pipe_flush = pipe_flush_pre | pipe_flush_pre_dly;
     always @(posedge clk or negedge rstb) begin
         if(~rstb) begin
             pipe_flush <= 0;

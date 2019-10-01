@@ -30,7 +30,7 @@
 `define REG_SIZE        16'h400
 
 `define LOG_CORE(x) \
-    `ifdef SIM \
+    `ifdef DBG \
         $fwrite(fp,x) \
     `endif
 

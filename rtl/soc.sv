@@ -8,6 +8,7 @@ module soc#(
 )(
     input clk,
     input rstb_in,
+    input sw_uart_upgrade_b, //software upgrade
     input uart_rx,
     output uart_tx,
     input btn,
@@ -30,7 +31,6 @@ logic [XLEN/8-1:0]          d_wr_be;
 logic                       d_rd_req;
 logic [XLEN-1:0]            d_rd_data;
 logic [XLEN-1:0]            d_wr_data;
-logic                       d_ready;
 
 logic [RAM_ADDR_LEN-1:0]    d_ram_addr;
 logic [XLEN-1:0]            d_ram_rd_data;
@@ -43,10 +43,27 @@ logic                       reg_wr_en;
 logic [XLEN/8-1:0]          reg_wr_be;
 logic                       reg_rd_en;
 logic                       reg_rd_ready;
+logic                       reg_wr_ready;
 logic [XLEN-1:0]            reg_rd_data;
 logic [XLEN-1:0]            reg_wr_data;
 
+logic                       uart_ram_wr_en;
+logic [XLEN-1:0]            uart_ram_wr_data;
+logic [XLEN/8-1:0]          uart_ram_we;
+logic [RAM_ADDR_LEN-1:0]    uart_ram_addr;
 
+wire [RAM_ADDR_LEN-1:0]     ram_addr    = uart_ram_wr_en ? uart_ram_addr : d_ram_addr;
+wire [XLEN-1:0]             ram_wr_data = uart_ram_wr_en ? uart_ram_wr_data : d_ram_wr_data;
+wire [XLEN/8-1:0]           ram_we      = uart_ram_wr_en ? uart_ram_we : d_ram_we;
+
+wire                        during_sw_upgrade;
+
+logic                       uart_wr_en;
+logic [7:0]                 uart_wr_data;
+logic                       uart_tx_busy;
+logic                       uart_rx_valid;
+logic [7:0]                 uart_rx_data;
+logic                       uart_wr_ready;
 /**************************************************************************************************
 *     Reset 
 **************************************************************************************************/
@@ -102,12 +119,13 @@ d_mux#(
     .reg_wr_data(reg_wr_data),
     .reg_rd_en(reg_rd_en),
     .reg_rd_data(reg_rd_data),
-    .reg_rd_ready(reg_rd_ready)
+    .reg_rd_ready(reg_rd_ready),
+    .reg_wr_ready(reg_wr_ready)
 );
 
 core U_CORE(
     .clk(clk),
-    .rstb(rstb),
+    .rstb(rstb&~during_sw_upgrade),
 
     .i_data(i_data),
     .i_addr(i_addr),
@@ -128,10 +146,10 @@ ram_sdp #(
     .INIT_FN("../c/xriscv.ram")
 )U_RAM(
     .clk(clk),
-    .ena(d_ram_en),
-    .wea(d_ram_we),
-    .addra(d_ram_addr),
-    .dina(d_ram_wr_data),
+    .ena(d_ram_en|uart_ram_wr_en),
+    .wea(ram_we),
+    .addra(ram_addr),
+    .dina(ram_wr_data),
     .douta(d_ram_rd_data),
     .addrb(i_ram_addr),
     .doutb(i_ram_data)
@@ -146,9 +164,6 @@ rom #(
     .addr(i_rom_addr),
     .dout(i_rom_data)
 );
-
-assign uart_status = 0;
-assign uart_rcvd_byte = 0;
 
 regfile U_REGFILE(
     .clk(clk),
@@ -165,6 +180,63 @@ regfile U_REGFILE(
     .rdata(reg_rd_data),
     .rd_rdy(reg_rd_ready)
 );
+
+uart_upgrade#(
+    .XLEN(XLEN),
+    .ADDR_LEN(14)
+)U_UART_UPGRADE(
+    .clk(clk),
+    .rstb(rstb),
+    .sw_uart_upgrade_b(sw_uart_upgrade_b),
+    .uart_rx_valid(uart_rx_valid),
+    .uart_rx_data(uart_rx_data),
+    
+    .during_sw_upgrade(during_sw_upgrade),
+    .uart_ram_wr_en(uart_ram_wr_en),
+    .uart_ram_addr(uart_ram_addr),
+    .uart_ram_wr_data(uart_ram_wr_data),
+    .uart_ram_we(uart_ram_we)
+);
+
+uart_top U_UART(
+    .clk(clk),
+    .rstb(rstb),
+    .baudrate_cfg(uart_cfg), //clk_en will go to 1 every (50000000/(baudrate_cfg+1)). 216: 9600; 108: 19200; 52: 38400; 36: 57600;  18: 115200; 9: 230400; 
+    .rx(uart_rx),
+    .tx(uart_tx),
+    .wr_en(uart_wr_en),
+    .wr_data(uart_wr_data),
+    .tx_busy(uart_tx_busy),
+    .rx_valid(uart_rx_valid),
+    .rx_data(uart_rx_data)
+);
+
+always @(posedge clk or negedge rstb) begin
+    if(~rstb) begin
+        uart_wr_en <= 0;
+    end else begin
+        if(reg_wr_en & (reg_addr == 0) & reg_wr_be[1] & ~uart_wr_en) begin
+            uart_wr_en <= 1;
+        end else begin
+            uart_wr_en <= 0;
+        end
+    end
+end
+
+always @(posedge clk ) begin
+    uart_wr_data <= reg_wr_data[15:8];
+end
+
+always @(posedge clk or negedge rstb) begin
+    if(~rstb) begin
+        uart_wr_ready <= 0;
+    end else begin
+        uart_wr_ready <= ~uart_tx_busy;
+    end
+end
+
+assign reg_wr_ready = reg_addr == 0 & reg_wr_be[1] ? uart_wr_ready : 1'b1;
+ 
 
 `ifdef SIM
     integer fp;
