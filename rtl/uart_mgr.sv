@@ -1,13 +1,14 @@
 /**********************************************************************************************
 * This module use uart to upgrade the content of RAM
 **********************************************************************************************/
-module uart_upgrade#(
+module uart_sw_upgrader #(
     parameter ADDR_LEN = 14,
     parameter XLEN = 32
 )(
     input                       clk,
     input                       rstb,
     input                       sw_uart_upgrade_b,
+
     input                       uart_rx_valid,
     input [7:0]                 uart_rx_data,
     
@@ -15,7 +16,9 @@ module uart_upgrade#(
     output logic                uart_ram_wr_en,
     output logic [XLEN-1:0]     uart_ram_wr_data,
     output logic [ADDR_LEN-1:0] uart_ram_addr,
-    output logic [XLEN/8-1:0]   uart_ram_we
+    output logic [XLEN/8-1:0]   uart_ram_we,
+    output logic                uart_txfifo_full,
+    output logic                uart_rxfifo_empty
 );
 
     logic be_cnt;
@@ -68,5 +71,8 @@ module uart_upgrade#(
             uart_ram_wr_en <= uart_rx_valid;
         end
     end
+
+    assign uart_txfifo_full = 0;
+    assign uart_rxfifo_empty = 0;
      
 endmodule

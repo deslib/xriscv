@@ -11,7 +11,7 @@ module core(
     input                 d_wr_ready,
     output logic          d_rd_req,
     input                 d_rd_ready,
-    output logic [3 :0]   d_wr_be,
+    output logic [3 :0]   d_be,
     input        [31:0]   d_rd_data,
     output logic [31:0]   d_wr_data
 );
@@ -188,7 +188,7 @@ module core(
                             (laddr[1] ? {operand2[15:0],16'h0} : {16'h0, operand2[15:0]}) : 
                            operand2;
 
-    assign d_wr_be =  funct3 == 0 ? 
+    assign d_be =  funct3 == 0 ? 
                         (laddr == 0 ? 4'h1 : 
                         laddr == 1 ? 4'h2 :
                         laddr == 2 ? 4'h4 : 4'h8) :

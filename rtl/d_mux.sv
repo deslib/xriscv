@@ -12,7 +12,7 @@ module d_mux#(
     output                      rd_ready,
     input                       wr_req,
     output                      wr_ready,
-    input  logic [XLEN/8-1:0]   wr_be,
+    input  logic [XLEN/8-1:0]   be,
     input  logic [XLEN-1:0]     wr_data,
     output logic [XLEN-1:0]     rd_data,
 
@@ -64,13 +64,13 @@ always @(posedge clk) begin
 end
 assign rd_data = d_is_from_reg_dly ? reg_rd_data : ram_rd_data;
 
-// wr_en, wr_be, wr_data
+// wr_en, be, wr_data
 assign reg_wr_en = d_is_from_reg ? wr_req : 0;
-assign reg_wr_be = wr_be;
+assign reg_wr_be = be;
 
 assign ram_en = d_is_from_reg ? 0 : (wr_req | rd_req);
 assign ram_rd_req = d_is_from_reg ? 0 : rd_req;
-assign ram_we = wr_req ? wr_be : 0;
+assign ram_we = wr_req ? be : 0;
 
 assign reg_wr_data = wr_data;
 assign ram_wr_data = wr_data;

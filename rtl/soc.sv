@@ -27,7 +27,7 @@ logic [XLEN-1:0]            i_data;
 
 logic [31:0]                d_addr;
 logic                       d_wr_req;
-logic [XLEN/8-1:0]          d_wr_be;
+logic [XLEN/8-1:0]          d_be;
 logic                       d_rd_req;
 logic [XLEN-1:0]            d_rd_data;
 logic [XLEN-1:0]            d_wr_data;
@@ -47,6 +47,7 @@ logic                       reg_wr_ready;
 logic [XLEN-1:0]            reg_rd_data;
 logic [XLEN-1:0]            reg_wr_data;
 
+// The signals used for software ram upgrade
 logic                       uart_ram_wr_en;
 logic [XLEN-1:0]            uart_ram_wr_data;
 logic [XLEN/8-1:0]          uart_ram_we;
@@ -58,12 +59,19 @@ wire [XLEN/8-1:0]           ram_we      = uart_ram_wr_en ? uart_ram_we : d_ram_w
 
 wire                        during_sw_upgrade;
 
-logic                       uart_wr_en;
-logic [7:0]                 uart_wr_data;
+// uart perpheral signals 
+logic                       uart_tx_valid;
+logic [7:0]                 uart_tx_data;
 logic                       uart_tx_busy;
 logic                       uart_rx_valid;
 logic [7:0]                 uart_rx_data;
+
+// uart-core handshake signals
 logic                       uart_wr_ready;
+logic                       uart_rd_ready;
+logic                       uart_wr_req;
+logic                       uart_rd_req;
+
 /**************************************************************************************************
 *     Reset 
 **************************************************************************************************/
@@ -103,7 +111,7 @@ d_mux#(
     .rd_ready(d_rd_ready),
     .wr_req(d_wr_req),
     .wr_ready(d_wr_ready),
-    .wr_be(d_wr_be),
+    .be(d_be),
     .wr_data(d_wr_data),
     .rd_data(d_rd_data),
 
@@ -120,7 +128,7 @@ d_mux#(
     .reg_rd_en(reg_rd_en),
     .reg_rd_data(reg_rd_data),
     .reg_rd_ready(reg_rd_ready),
-    .reg_wr_ready(reg_wr_ready)
+    .reg_wr_ready(1'b1)
 );
 
 core U_CORE(
@@ -135,7 +143,7 @@ core U_CORE(
     .d_wr_ready(d_wr_ready),
     .d_rd_req(d_rd_req),
     .d_rd_ready(d_rd_ready),
-    .d_wr_be(d_wr_be),
+    .d_be(d_be),
     .d_wr_data(d_wr_data),
     .d_rd_data(d_rd_data)
 );
@@ -181,21 +189,40 @@ regfile U_REGFILE(
     .rd_rdy(reg_rd_ready)
 );
 
-uart_upgrade#(
+/**************************************************************************************************
+*    UART 
+**************************************************************************************************/
+wire uart_txfifo_full;
+wire uart_rxfifo_empty;
+
+assign uart_status[0] = uart_txfifo_full;
+assign uart_status[1] = uart_rxfifo_empty;
+assign uart_status[7:2] = 'h0;
+assign uart_wr_ready = ~uart_txfifo_full;
+assign uart_rd_ready = uart_rxfifo_empty;
+assign uart_wr_req = d_wr_req & (d_addr[11:2] == 'h200) & d_be[1] & ~uart_txfifo_full;
+assign uart_rd_en  = d_rd_req & (d_addr[11:2] == 'h200) & d_be[2] & ~uart_rxfifo_empty;
+
+uart_mgr #(
     .XLEN(XLEN),
     .ADDR_LEN(14)
-)U_UART_UPGRADE(
+)U_UART_MGR(
     .clk(clk),
     .rstb(rstb),
-    .sw_uart_upgrade_b(sw_uart_upgrade_b),
     .uart_rx_valid(uart_rx_valid),
     .uart_rx_data(uart_rx_data),
+    .uart_tx_valid(uart_tx_valid),
+    .uart_tx_data(uart_tx_data),
+    .uart_tx_busy(uart_tx_busy),
     
+    .sw_uart_upgrade_b(sw_uart_upgrade_b),
     .during_sw_upgrade(during_sw_upgrade),
     .uart_ram_wr_en(uart_ram_wr_en),
     .uart_ram_addr(uart_ram_addr),
     .uart_ram_wr_data(uart_ram_wr_data),
-    .uart_ram_we(uart_ram_we)
+    .uart_ram_we(uart_ram_we),
+    .uart_txfifo_full(uart_txfifo_full),
+    .uart_rxfifo_empty(uart_rxfifo_empty)
 );
 
 uart_top U_UART(
@@ -204,39 +231,12 @@ uart_top U_UART(
     .baudrate_cfg(uart_cfg), //clk_en will go to 1 every (50000000/(baudrate_cfg+1)). 216: 9600; 108: 19200; 52: 38400; 36: 57600;  18: 115200; 9: 230400; 
     .rx(uart_rx),
     .tx(uart_tx),
-    .wr_en(uart_wr_en),
-    .wr_data(uart_wr_data),
+    .tx_valid(uart_tx_valid),
+    .tx_data(uart_tx_data),
     .tx_busy(uart_tx_busy),
     .rx_valid(uart_rx_valid),
     .rx_data(uart_rx_data)
 );
-
-always @(posedge clk or negedge rstb) begin
-    if(~rstb) begin
-        uart_wr_en <= 0;
-    end else begin
-        if(reg_wr_en & (reg_addr == 0) & reg_wr_be[1] & ~uart_wr_en) begin
-            uart_wr_en <= 1;
-        end else begin
-            uart_wr_en <= 0;
-        end
-    end
-end
-
-always @(posedge clk ) begin
-    uart_wr_data <= reg_wr_data[15:8];
-end
-
-always @(posedge clk or negedge rstb) begin
-    if(~rstb) begin
-        uart_wr_ready <= 0;
-    end else begin
-        uart_wr_ready <= ~uart_tx_busy;
-    end
-end
-
-assign reg_wr_ready = reg_addr == 0 & reg_wr_be[1] ? uart_wr_ready : 1'b1;
- 
 
 `ifdef SIM
     integer fp;
@@ -245,7 +245,7 @@ assign reg_wr_ready = reg_addr == 0 & reg_wr_be[1] ? uart_wr_ready : 1'b1;
     end
     always @(posedge clk) begin
         if(reg_wr_en) begin
-            if(reg_addr == 0 && reg_wr_be == 4'b0010) begin
+            if(reg_addr == 0 && reg_wr_be[1]) begin
                 $fwrite(fp,"%c",reg_wr_data[15:8]);
             end
         end
