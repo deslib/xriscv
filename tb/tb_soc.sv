@@ -34,14 +34,14 @@ soc#(
     .led(led)
 );
 
-uart_top U_UART(
+uart U_UART(
     .clk(clk),
     .rstb(rstb_in),
     .baudrate_cfg(8'd18), //clk_en will go to 1 every (50000000/(baudrate_cfg+1)). 216: 9600; 108: 19200; 52: 38400; 36: 57600;  18: 115200; 9: 230400; 
     .rx(uart_rx),
     .tx(uart_tx),
-    .wr_en(uart_wr_en),
-    .wr_data(uart_wr_data),
+    .tx_valid(uart_wr_en),
+    .tx_data(uart_wr_data),
     .tx_busy(uart_tx_busy),
     .rx_valid(uart_rx_valid),
     .rx_data(uart_rx_data)

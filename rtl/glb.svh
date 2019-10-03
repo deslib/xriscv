@@ -26,8 +26,8 @@
 `define ROM_SIZE        16'h800
 `define RAM_BASE_ADDR   16'h4000
 `define RAM_SIZE        16'h4000
-`define REG_BASE_ADDR   16'h800 
-`define REG_SIZE        16'h400
+`define IO_BASE_ADDR   16'h800 
+`define IO_SIZE        16'h400
 
 `define LOG_CORE(x) \
     `ifdef DBG \

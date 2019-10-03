@@ -11,6 +11,8 @@
 ../rtl/rom.sv
 ../rtl/core.sv
 ../rtl/d_mux.sv
+../rtl/misc/fifo.sv
+../rtl/uart_sw_upgrader.sv
 ../rtl/uart_mgr.sv
 ../rtl/soc.sv
 ../tb/tb_soc.sv

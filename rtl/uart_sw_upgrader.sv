@@ -16,9 +16,7 @@ module uart_sw_upgrader #(
     output logic                uart_ram_wr_en,
     output logic [XLEN-1:0]     uart_ram_wr_data,
     output logic [ADDR_LEN-1:0] uart_ram_addr,
-    output logic [XLEN/8-1:0]   uart_ram_we,
-    output logic                uart_txfifo_full,
-    output logic                uart_rxfifo_empty
+    output logic [XLEN/8-1:0]   uart_ram_we
 );
 
     logic be_cnt;
@@ -58,7 +56,7 @@ module uart_sw_upgrader #(
         if(~rstb) begin
             uart_ram_addr <= 0;
         end else begin
-            if(uart_rx_valid) begin
+            if(uart_ram_wr_en & uart_ram_we[XLEN/8-1]) begin
                 uart_ram_addr <= uart_ram_addr + 1;
             end
         end
@@ -72,7 +70,4 @@ module uart_sw_upgrader #(
         end
     end
 
-    assign uart_txfifo_full = 0;
-    assign uart_rxfifo_empty = 0;
-     
 endmodule
