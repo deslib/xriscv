@@ -5,15 +5,24 @@ ROM_SIZE      = 0x800
 RAM_BASE_ADDR = 0x4000
 RAM_SIZE      = 0x4000
 
-def bin2rxm(in_fn,rom_fn,ram_fn,mif_fn):
+def bin2rxm(in_fn,rom_fn,ram_fn,mif_fn,ram_bin_fn):
     with open(in_fn,'rb') as f:
-        bytes = f.read()
+        bin_bytes = f.read()
     dws = []
-    for i in range(len(bytes)):
+    for i in range(len(bin_bytes)):
         if (i%4) == 0:
-            dws.append(bytes[i])
+            dws.append(bin_bytes[i])
         else:
-            dws[-1] = dws[-1] | (bytes[i] << (8*(i%4)))
+            dws[-1] = dws[-1] | (bin_bytes[i] << (8*(i%4)))
+
+    #generate the bin file for uart software upgrade
+    f_ram_bin = open(ram_bin_fn,'wb')
+    ram_bin = bytearray()
+    for i in range(len(bin_bytes)):
+        if i > RAM_BASE_ADDR and i < RAM_BASE_ADDR + RAM_SIZE:
+            ram_bin.append(bin_bytes[i])
+    f_ram_bin.write(bytes(ram_bin))
+    f_ram_bin.close()
 
     f_rom = open(rom_fn,'w')
     f_ram = open(ram_fn,'w')
@@ -36,7 +45,7 @@ def bin2rxm(in_fn,rom_fn,ram_fn,mif_fn):
 
 if __name__ == '__main__':
     if sys.argv[1] == 'b2r':
-        bin2rxm(sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5])
+        bin2rxm(sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5],sys.argv[6])
 
 
 

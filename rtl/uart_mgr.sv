@@ -17,7 +17,7 @@ module uart_mgr#(
     output logic [XLEN/8-1:0]   uart_ram_we,
 
     //interface to core
-    input                       uart_wr_req,
+    input                       uart_wr_en,
     input [7:0]                 uart_wr_data,
     output logic                uart_wr_ready,
     input                       uart_rd_req,
@@ -39,13 +39,22 @@ logic [7:0] uart_tx_data;
 logic [7:0] uart_rx_data;
 logic       uart_tx_busy;
 wire        uart_txfifo_rd_en = ~uart_txfifo_empty & ~uart_tx_busy;
-wire        uart_tx_valid = uart_txfifo_rd_en;
+logic       uart_tx_valid;
 `ifdef FAST_UART
     assign uart_wr_ready = 1'b1;
 `else
     assign uart_wr_ready = ~uart_txfifo_full;
 `endif
 assign uart_rd_ready = 1;
+
+always @(posedge clk or negedge rstb) begin
+    if(~rstb) begin
+        uart_tx_valid <= 0;
+    end else begin
+        uart_tx_valid <= uart_txfifo_rd_en;
+    end
+end
+ 
     
 uart U_UART(
     .clk(clk),
@@ -87,7 +96,7 @@ fifo#(
 	.clk(clk),
 	.rst(~rstb),
 	.din(uart_wr_data),
-	.wr_en(uart_wr_req&uart_wr_ready),
+	.wr_en(uart_wr_en),
 	.rd_en(uart_txfifo_rd_en),
 	.dout(uart_tx_data),
 	.full(uart_txfifo_full),

@@ -38,9 +38,9 @@ logic [XLEN/8-1:0]          d_ram_we;
 logic                       d_ram_en;
 
 logic [15:0]                io_addr;
-logic                       io_wr_en;
+logic                       io_wr_req;
 logic [XLEN/8-1:0]          io_be;
-logic                       io_rd_en;
+logic                       io_rd_req;
 logic                       io_rd_ready;
 logic                       io_wr_ready;
 logic [XLEN-1:0]            io_rd_data;
@@ -64,6 +64,8 @@ logic                       uart_rd_ready;
 logic                       uart_wr_req;
 logic                       uart_rd_req;
 logic [7:0]                 uart_wr_data;
+wire                        uart_txfifo_full;
+wire                        uart_rxfifo_empty;
 
 /**************************************************************************************************
 *     Reset 
@@ -115,10 +117,10 @@ d_mux#(
     .ram_rd_data(d_ram_rd_data),
 
     .io_addr(io_addr),
-    .io_wr_en(io_wr_en),
+    .io_wr_req(io_wr_req),
     .io_be(io_be),
     .io_wr_data(io_wr_data),
-    .io_rd_en(io_rd_en),
+    .io_rd_req(io_rd_req),
     .io_rd_data(io_rd_data),
     .io_rd_ready(io_rd_ready),
     .io_wr_ready(io_wr_ready)
@@ -193,14 +195,14 @@ core_rom U_ROM(
 regfile U_REGFILE(
     .clk(clk),
     .rstb(rstb),
-    .wr_en(io_wr_en),
+    .wr_en(io_wr_req),
     .be(io_be),
     .wr_addr(io_addr),
     .wdata(io_wr_data),
 
     `include "reg_conn.vh"
 
-    .rd_en(io_rd_en),
+    .rd_en(io_rd_req),
     .rd_addr(io_addr),
     .rdata(io_rd_data),
     .rd_rdy(io_rd_ready)
@@ -210,7 +212,15 @@ always @(posedge clk or negedge rstb) begin
     if(~rstb) begin
         io_wr_ready <= 0;
     end else begin
-        io_wr_ready <= (d_wr_req & (d_addr[11:2] == 'h200) & d_be[1]) ?  uart_wr_ready : io_wr_en;
+        if(io_wr_req&io_wr_ready) begin
+            io_wr_ready <= 0;
+        end else if(io_wr_req)begin
+            if(io_addr == 0 && io_be[1]) begin
+                io_wr_ready <= uart_wr_ready;
+            end else begin
+                io_wr_ready <= 1;
+            end
+        end
     end
 end
  
@@ -219,8 +229,6 @@ end
 /**************************************************************************************************
 *    UART 
 **************************************************************************************************/
-wire uart_txfifo_full;
-wire uart_rxfifo_empty;
 
 `ifdef FAST_UART
     assign uart_status[0] = 1'b0;
@@ -229,8 +237,8 @@ wire uart_rxfifo_empty;
 `endif
 assign uart_status[1] = uart_rxfifo_empty;
 assign uart_status[7:2] = 'h0;
-assign uart_wr_req = d_wr_req & (d_addr[11:2] == 'h200) & d_be[1];
-assign uart_rd_req = d_rd_req & (d_addr[11:2] == 'h200) & d_be[2];
+assign uart_wr_req = io_wr_req & (io_addr == 'h0) & d_be[1];
+assign uart_rd_req = io_rd_req & (io_addr == 'h0) & d_be[2];
 assign uart_wr_data = d_wr_data[15:8];
 
 uart_mgr#(
@@ -247,7 +255,7 @@ uart_mgr#(
     .uart_ram_addr(uart_ram_addr),
     .uart_ram_we(uart_ram_we),
     
-    .uart_wr_req(uart_wr_req),
+    .uart_wr_en(uart_wr_req & io_wr_ready),
     .uart_wr_data(uart_wr_data),
     .uart_wr_ready(uart_wr_ready),
     .uart_rd_req(uart_rd_req),
@@ -267,7 +275,7 @@ uart_mgr#(
         fp = $fopen("uart.txt","w");
     end
     always @(posedge clk) begin
-        if(io_wr_en&io_wr_ready) begin
+        if(io_wr_req&io_wr_ready) begin
             if(io_addr == 0 && io_be[1]) begin
                 $fwrite(fp,"%c",io_wr_data[15:8]);
             end

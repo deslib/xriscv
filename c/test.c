@@ -1,6 +1,7 @@
 #include "glb.h"
 #include <stdio.h>
 #include "test.h"
+#include "regfile.h"
 
 void test_alu_16(){
     i16 ia;
@@ -178,6 +179,7 @@ void test(){
     test_uiapc();
     test_load();
     test_reg();
+    regfile.led_btn.led = 0x5;
     test_alu_16();
     test_alu_32();
 }

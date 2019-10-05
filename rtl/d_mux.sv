@@ -24,10 +24,10 @@ module d_mux#(
     //input                       ram_rd_ready,
 
     output logic [15:0]         io_addr,
-    output logic                io_wr_en,
+    output logic                io_wr_req,
     output logic [XLEN/8-1:0]   io_be,
     output logic [XLEN-1:0]     io_wr_data,
-    output logic                io_rd_en,
+    output logic                io_rd_req,
     input        [XLEN-1:0]     io_rd_data,
     input                       io_rd_ready,
     input                       io_wr_ready
@@ -76,7 +76,7 @@ assign wr_ready = d_is_from_io_dly ? io_wr_ready&wr_req : ram_wr_ready;
 //        rd_ready <= 0;
 //        wr_ready <= 0;
 //    end else begin
-//        rd_ready <= d_is_from_io ? io_rd_ready & io_rd_en : ram_rd_ready;
+//        rd_ready <= d_is_from_io ? io_rd_ready & io_rd_req : ram_rd_ready;
 //        wr_ready <= d_is_from_io ? io_wr_ready : ram_wr_ready;
 //    end
 //end
@@ -89,7 +89,7 @@ end
 assign rd_data = d_is_from_io_dly ? io_rd_data : ram_rd_data;
 
 // wr_en, be, wr_data
-assign io_wr_en = d_is_from_io ? wr_req : 1'b0;
+assign io_wr_req = d_is_from_io ? wr_req : 1'b0;
 assign io_be = be;
 
 assign ram_en = d_is_from_io ? 1'b0 : (wr_req | rd_req);
@@ -100,8 +100,8 @@ assign ram_we = wr_req ? be : 4'h0;
 assign io_wr_data = wr_data;
 assign ram_wr_data = wr_data;
 
-// io_rd_en
-assign io_rd_en = d_is_from_io ? rd_req : 1'b0;
+// io_rd_req
+assign io_rd_req = d_is_from_io ? rd_req : 1'b0;
 
 // addr, addr
 assign ram_addr = (addr - `RAM_BASE_ADDR) >> 2;
