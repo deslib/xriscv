@@ -40,8 +40,11 @@ logic [7:0] uart_rx_data;
 logic       uart_tx_busy;
 wire        uart_txfifo_rd_en = ~uart_txfifo_empty & ~uart_tx_busy;
 wire        uart_tx_valid = uart_txfifo_rd_en;
-
-assign uart_wr_ready = ~uart_txfifo_full;
+`ifdef FAST_UART
+    assign uart_wr_ready = 1'b1;
+`else
+    assign uart_wr_ready = ~uart_txfifo_full;
+`endif
 assign uart_rd_ready = 1;
     
 uart U_UART(

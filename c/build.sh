@@ -15,4 +15,4 @@ riscv-none-embed-as.exe -march=rv32i -c assem.s -o assem.o
 riscv-none-embed-ld.exe -Txriscv.ld -L. -Map=xriscv.map startup.o boot.o stdio.o string.o xuart.o regfile.o  assem.o test.o -lgcc -o xriscv.o -L$RV32I_ILP32
 riscv-none-embed-objcopy -O binary xriscv.o xriscv.bin
 riscv-none-embed-objdump -d xriscv.o > xriscv.lst
-python ../py/t.py b2r xriscv.bin xriscv.rom xriscv.ram
+python ../py/t.py b2r xriscv.bin xriscv.rom xriscv.ram xriscv.mif

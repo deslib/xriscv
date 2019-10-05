@@ -3,7 +3,7 @@
 module soc#(
     parameter XLEN = 32,
     parameter ADDR_LEN = 16,
-    parameter ROM_ADDR_LEN = 12,
+    parameter ROM_ADDR_LEN = 9,
     parameter RAM_ADDR_LEN = ADDR_LEN-2
 )(
     input clk,
@@ -11,8 +11,7 @@ module soc#(
     input sw_uart_upgrade_b, //software upgrade
     input uart_rx,
     output uart_tx,
-    input btn,
-    output [7:0] led
+    output [3:0] led
 );
 
 `include "reg_decl.vh"
@@ -142,6 +141,7 @@ core U_CORE(
     .d_rd_data(d_rd_data)
 );
 
+`ifdef SIM
 ram_sdp #(
     .DATA_WIDTH(32),
     .DATA_DEPTH(2**(RAM_ADDR_LEN)),
@@ -156,7 +156,23 @@ ram_sdp #(
     .addrb(i_ram_addr),
     .doutb(i_ram_data)
 );
+`else
+    
+core_ram U_RAM(
+	.address_a(ram_addr),
+	.address_b(i_ram_addr),
+	.byteena_a(ram_we),
+	.clock(clk),
+	.data_a(ram_wr_data),
+	.data_b(),
+	.wren_a(d_ram_en|uart_ram_wr_en),
+	.wren_b(1'b0),
+	.q_a(d_ram_rd_data),
+	.q_b(i_ram_data)
+);
+`endif
 
+`ifdef SIM
 rom #(
     .DATA_WIDTH(32),
     .DATA_DEPTH(2**(ROM_ADDR_LEN)),
@@ -166,6 +182,13 @@ rom #(
     .addr(i_rom_addr),
     .dout(i_rom_data)
 );
+`else
+core_rom U_ROM(
+	.address(i_rom_addr),
+	.clock(clk),
+	.q(i_rom_data)
+);
+`endif
 
 regfile U_REGFILE(
     .clk(clk),
@@ -183,7 +206,14 @@ regfile U_REGFILE(
     .rd_rdy(io_rd_ready)
 );
 
-assign io_wr_ready = (d_wr_req & (d_addr[11:2] == 'h200) & d_be[1]) ?  uart_wr_ready : 1'b1;
+always @(posedge clk or negedge rstb) begin
+    if(~rstb) begin
+        io_wr_ready <= 0;
+    end else begin
+        io_wr_ready <= (d_wr_req & (d_addr[11:2] == 'h200) & d_be[1]) ?  uart_wr_ready : io_wr_en;
+    end
+end
+ 
 //assign io_wr_ready = 1;
 
 /**************************************************************************************************
@@ -192,7 +222,11 @@ assign io_wr_ready = (d_wr_req & (d_addr[11:2] == 'h200) & d_be[1]) ?  uart_wr_r
 wire uart_txfifo_full;
 wire uart_rxfifo_empty;
 
-assign uart_status[0] = uart_txfifo_full;
+`ifdef FAST_UART
+    assign uart_status[0] = 1'b0;
+`else
+    assign uart_status[0] = uart_txfifo_full;
+`endif
 assign uart_status[1] = uart_rxfifo_empty;
 assign uart_status[7:2] = 'h0;
 assign uart_wr_req = d_wr_req & (d_addr[11:2] == 'h200) & d_be[1];
@@ -223,8 +257,8 @@ uart_mgr#(
     .uart_rxfifo_empty(uart_rxfifo_empty),
     
     .baudrate_cfg(uart_cfg), //clk_en will go to 1 every (50000000/(baudrate_cfg+1)). 216: 9600; 108: 19200; 52: 38400; 36: 57600;  18: 115200; 9: 230400; 
-    .rx(rx),
-    .tx(tx)
+    .rx(uart_rx),
+    .tx(uart_tx)
 );
     
 `ifdef SIM
@@ -233,12 +267,14 @@ uart_mgr#(
         fp = $fopen("uart.txt","w");
     end
     always @(posedge clk) begin
-        if(io_wr_en) begin
+        if(io_wr_en&io_wr_ready) begin
             if(io_addr == 0 && io_be[1]) begin
                 $fwrite(fp,"%c",io_wr_data[15:8]);
             end
         end
     end
 `endif
+
+assign led = ~led_b;
 
 endmodule

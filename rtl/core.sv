@@ -74,6 +74,19 @@ module core(
     wire wait_rd_data = d_rd_req & ~d_rd_ready;
     wire wait_wr_data = d_wr_req & ~d_wr_ready;
     wire stalling = wait_rd_data | wait_wr_data;
+    //logic stalling;
+    //always @(posedge clk or negedge rstb) begin
+    //    if(~rstb) begin
+    //        stalling <= 0;
+    //    end else begin
+    //        if( (d_rd_req&d_rd_ready) | (d_wr_req&d_wr_ready) ) begin
+    //            stalling <= 0;
+    //        end else if(~pipe_flush_pre&(is_op_load|is_op_store)) begin
+    //            stalling <= 1;
+    //        end
+    //    end
+    //end
+     
 
 
     /****************************************************************************
@@ -111,13 +124,13 @@ module core(
             imm_signed   <= (is_op_lui | is_op_auipc)         ? {i_data[31:12],ALL0[11:0]} :
                             (is_op_jal)                       ? {i_data[31] ? ALL1[31:21]:ALL0[31:21], i_data[31],i_data[19:12],i_data[20],i_data[30:21],1'b0} :
                             (is_op_jalr|is_op_imm|is_op_load) ? {i_data[31] ? ALL1[31:12]:ALL0[31:12], i_data[31:20]} :
-                            (is_op_branch)                    ? {i_data[31] ? ALL1[31:12]:ALL0[31:12], i_data[31],i_data[7],i_data[30:25],i_data[11:8],1'b0} :
+                            (is_op_branch)                    ? {i_data[31] ? ALL1[31:13]:ALL0[31:13], i_data[31],i_data[7],i_data[30:25],i_data[11:8],1'b0} :
                             (is_op_store)                     ? {i_data[31] ? ALL1[31:12]:ALL0[31:12], i_data[31:25], i_data[11:7]} : 32'h0;
 
             imm_unsigned <= (is_op_lui | is_op_auipc)         ? {i_data[31:12],ALL0[11:0]} :
                             (is_op_jal)                       ? {ALL0[31:21], i_data[31],i_data[19:12],i_data[20],i_data[30:21],1'b0} :
                             (is_op_jalr|is_op_imm|is_op_load) ? {ALL0[31:12], i_data[31:20]} :
-                            (is_op_branch)                    ? {ALL0[31:12], i_data[31],i_data[7],i_data[30:25],i_data[11:8],1'b0} :
+                            (is_op_branch)                    ? {ALL0[31:13], i_data[31],i_data[7],i_data[30:25],i_data[11:8],1'b0} :
                             (is_op_store)                     ? {ALL0[31:12], i_data[31:25], i_data[11:7]} : 32'h0;
 
             src1 <= i_data[19:15];
@@ -207,7 +220,19 @@ module core(
                    4'hf;
 
 
-    assign d_wr_req = op_store & ~pipe_flush;
+    always @(posedge clk or negedge rstb) begin
+        if(~rstb) begin
+            d_wr_req <= 1'b0;
+        end else begin
+            if(d_wr_req&d_wr_ready&~is_op_store) begin
+                d_wr_req <= 1'b0;
+            end else if(is_op_store)begin
+                d_wr_req <= 1'b1;
+            end
+        end
+    end
+     
+    //assign d_wr_req = op_store & ~pipe_flush;
 
     assign d_addr = x[src1] + imm_signed;
 

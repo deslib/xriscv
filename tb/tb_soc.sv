@@ -4,7 +4,7 @@ module tb_soc;
 parameter PEIROD = 20;
 logic clk;
 logic rstb_in;
-wire [7:0] led;
+wire [3:0] led;
 
 logic [7:0] uart_wr_data;
 wire  [7:0] uart_rx_data;
@@ -30,7 +30,6 @@ soc#(
     .sw_uart_upgrade_b(1'b1),
     .uart_rx(uart_tx),
     .uart_tx(uart_rx),
-    .btn(btn),
     .led(led)
 );
 

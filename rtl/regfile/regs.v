@@ -5,6 +5,7 @@ module regfile(
     output reg [7:0] uart_send_byte,
     input [7:0] uart_rcvd_byte,
     output reg [7:0] uart_cfg,
+    output reg [3:0] led_b,
     input wr_en,
     input [3:0] be,
     input [15:0] wr_addr,
@@ -21,6 +22,7 @@ always @(posedge clk or negedge rstb) begin
     if(~rstb) begin
         uart_send_byte <= 0;
         uart_cfg <= 8'd18;
+        led_b <= 0;
     end else if(wr_en) begin
         case(wr_addr) 
             'h0: begin
@@ -33,6 +35,11 @@ always @(posedge clk or negedge rstb) begin
                 end
                 if(be[3]) begin
                     uart_cfg[7:0] <= wdata[31:24];
+                end
+            end
+            'h4: begin
+                if(be[0]) begin
+                    led_b[3:0] <= wdata[3:0];
                 end
             end
         endcase
@@ -54,6 +61,10 @@ always @(posedge clk or negedge rstb) begin
                 if(be[3]) begin
                 end
             end
+            'h4: begin
+                if(be[0]) begin
+                end
+            end
         endcase
     end else begin
     end
@@ -70,6 +81,9 @@ always @(posedge clk or negedge rstb) begin
                 rdata[15:8] <= uart_send_byte;
                 rdata[23:16] <= uart_rcvd_byte;
                 rdata[31:24] <= uart_cfg;
+            end
+            'h4: begin
+                rdata[3:0] <= led_b;
             end
         endcase
     end else if(~rd_rdy)begin

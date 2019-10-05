@@ -11,8 +11,8 @@ SECTIONS
     {
         startup.o
         boot.o(.text)
+        xuart.o
         assem.o
-
     } > ROM
 
     .data :

@@ -1,1 +1,5 @@
-            .uart_status(uart_status),            .uart_send_byte(uart_send_byte),            .uart_rcvd_byte(uart_rcvd_byte),            .uart_cfg(uart_cfg),
+            .uart_status(uart_status),
+            .uart_send_byte(uart_send_byte),
+            .uart_rcvd_byte(uart_rcvd_byte),
+            .uart_cfg(uart_cfg),
+            .led_b(led_b),

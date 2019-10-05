@@ -39,6 +39,8 @@ module uart_sw_upgrader #(
             if(uart_rx_valid) begin
                 if(be_cnt == XLEN/8) begin
                     be_cnt <= 0;
+                end else begin
+                    be_cnt <= be_cnt + 1;
                 end
             end
         end
