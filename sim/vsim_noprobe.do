@@ -1,2 +1,2 @@
 #add wave -depth 6 -position insertpoint sim:/soc/*
-run 10000us;
+run 1000us;

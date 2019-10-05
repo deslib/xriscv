@@ -183,8 +183,8 @@ regfile U_REGFILE(
     .rd_rdy(io_rd_ready)
 );
 
-//assign io_wr_ready = d_wr_req & (d_addr[11:2] == 'h200) & d_be[1] & uart_wr_ready;
-assign io_wr_ready = 1;
+assign io_wr_ready = (d_wr_req & (d_addr[11:2] == 'h200) & d_be[1]) ?  uart_wr_ready : 1'b1;
+//assign io_wr_ready = 1;
 
 /**************************************************************************************************
 *    UART 
@@ -197,7 +197,7 @@ assign uart_status[1] = uart_rxfifo_empty;
 assign uart_status[7:2] = 'h0;
 assign uart_wr_req = d_wr_req & (d_addr[11:2] == 'h200) & d_be[1];
 assign uart_rd_req = d_rd_req & (d_addr[11:2] == 'h200) & d_be[2];
-assign uart_wr_data = d_wr_data;
+assign uart_wr_data = d_wr_data[15:8];
 
 uart_mgr#(
     .ADDR_LEN(14),

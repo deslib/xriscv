@@ -32,9 +32,17 @@ module uart_mgr#(
     output          tx
 );
 
-assign uart_wr_ready = 1;
+logic       uart_txfifo_empty;
+logic       uart_rxfifo_full;
+
+logic [7:0] uart_tx_data;
+logic [7:0] uart_rx_data;
+logic       uart_tx_busy;
+wire        uart_txfifo_rd_en = ~uart_txfifo_empty & ~uart_tx_busy;
+wire        uart_tx_valid = uart_txfifo_rd_en;
+
+assign uart_wr_ready = ~uart_txfifo_full;
 assign uart_rd_ready = 1;
-assign uart_rd_data = 0;
     
 uart U_UART(
     .clk(clk),
@@ -72,14 +80,32 @@ fifo#(
     .DATA_DEPTH(8),
     .PFULL_NUM(0),
     .PEMPTY_NUM(0)
-)U_FIFO(
+)U_TXFIFO(
 	.clk(clk),
 	.rst(~rstb),
-	.din(din),
-	.wr_en(1'b0),
-	.rd_en(1'b0),
-	.dout(dout),
+	.din(uart_wr_data),
+	.wr_en(uart_wr_req&uart_wr_ready),
+	.rd_en(uart_txfifo_rd_en),
+	.dout(uart_tx_data),
 	.full(uart_txfifo_full),
+	.empty(uart_txfifo_empty),
+	.pfull(),
+	.pempty()
+);
+
+fifo#(
+	.DATA_WIDTH(8),
+    .DATA_DEPTH(8),
+    .PFULL_NUM(0),
+    .PEMPTY_NUM(0)
+)U_RXFIFO(
+	.clk(clk),
+	.rst(~rstb),
+	.din(uart_rx_data),
+	.wr_en(uart_rx_valid),
+	.rd_en(uart_rd_req&uart_rd_ready),
+	.dout(uart_rd_data),
+	.full(uart_rxfifo_full),
 	.empty(uart_rxfifo_empty),
 	.pfull(),
 	.pempty()

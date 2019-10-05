@@ -198,13 +198,13 @@ module core(
                             (laddr[1] ? {operand2[15:0],16'h0} : {16'h0, operand2[15:0]}) : 
                            operand2;
 
-    assign d_be =  funct3 == 0 ? 
+    assign d_be =  funct3[1:0] == 0 ? 
                         (laddr == 0 ? 4'h1 : 
                         laddr == 1 ? 4'h2 :
                         laddr == 2 ? 4'h4 : 4'h8) :
-                      funct3 == 1 ? 
+                   funct3[1:0] == 1 ? 
                            (laddr[1] ? 4'hc : 4'h3) :
-                      4'hf;
+                   4'hf;
 
 
     assign d_wr_req = op_store & ~pipe_flush;
