@@ -1,0 +1,323 @@
+[
+    {
+        "name": "mstatus",
+        "offset": "0x300",
+        "default": "0x00001800",
+        "fields":[
+            { "bits": [2,0], "name": "resv1", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": 3, "name": "mie", "attr" : "rw", "default": "0x0","desc": "machine mode interrupt enable"},
+            { "bits": [6,4], "name": "resv2", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": 7, "name": "mpie", "attr" : "rw", "default": "0x0","desc": "machine mode interrupt enable before trap"},
+            { "bits": 8, "name": "spp", "attr" : "rw", "default": "0x0","desc": "mode before trap in supervios mode, hardwired to 0 if supervisor mode is not supported"},
+            { "bits": [10,9], "name": "resv3", "attr" : "rw", "default": "0x0","desc": ""},
+            { "bits": [12,11], "name": "mpp", "attr" : "ro", "default": "0x3","desc": "mode bfore trap in machine mode"},
+            { "bits": [31,13], "name": "resv4", "attr" : "rw", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "misa",
+        "offset": "0x301",
+        "default": "0x40000200",
+        "fields":[
+            { "bits": [25,0], "name": "extensions", "attr" : "ro", "default": "0x200","desc": ""},
+            { "bits": [29,26], "name": "resv1", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": [31,30], "name": "mxl", "attr" : "ro", "default": "0x1","desc": ""}
+        ]
+    },
+    {
+        "name": "mie",
+        "offset": "0x304",
+        "default": "0x0",
+        "fields":[
+            { "bits": [2,0], "name": "resv1", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": 3, "name": "msie", "attr" : "rw", "default": "0x0","desc": "machine software interrupt enable"},
+            { "bits": [6,4], "name": "resv2", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": 7, "name": "mtie", "attr" : "rw", "default": "0x0","desc": "machine timer interrupt enable"},
+            { "bits": [10,8], "name": "resv3", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": 11, "name": "meie", "attr" : "rw", "default": "0x0","desc": "machine external interrupt enable"},
+            { "bits": [31,12], "name": "resv4", "attr" : "ro", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "mtvec",
+        "offset": "0x305",
+        "default": "0x0",
+        "fields":[
+            { "bits": [1,0], "name": "mode", "attr" : "ro", "default": "0x1","desc": "asyschronous interrupts set pc to base+4xcause"},
+            { "bits": [31,2], "name": "base", "attr" : "rw", "default": "0x0","desc": "vector base address"}
+        ]
+    },
+    {
+        "name": "mepc",
+        "offset": "0x341",
+        "default": "0x0",
+        "fields":[
+            { "bits": [31,0], "name": "addr", "attr" : "rw", "default": "0x0","desc": "asyschronous interrupts set pc to base+4xcause"}
+        ]
+    },
+    {
+        "name": "mcause",
+        "offset": "0x342",
+        "default": "0x0",
+        "fields":[
+            { "bits": [4,0], "name": "addr", "attr" : "ro", "default": "0x0","desc": "asyschronous interrupts set pc to base+4xcause"},
+            { "bits": [30,5], "name": "resv1", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": 31, "name": "interrupt", "attr" : "ro", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "mtval",
+        "offset": "0x343",
+        "default": "0x0",
+        "fields":[
+            { "bits": [31,0], "name": "value", "attr" : "ro", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "mip",
+        "offset": "0x344",
+        "default": "0x0",
+        "fields":[
+            { "bits": [2,0], "name": "resv1", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": 3, "name": "msip", "attr" : "ro", "default": "0x0","desc": "machine software interrupt pending"},
+            { "bits": [6,4], "name": "resv2", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": 7, "name": "mtip", "attr" : "ro", "default": "0x0","desc": "machine timer interrupt pending"},
+            { "bits": [10,8], "name": "resv3", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": 11, "name": "meip", "attr" : "ro", "default": "0x0","desc": "machine external interrupt pending"},
+            { "bits": [31,12], "name": "resv4", "attr" : "ro", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "pmpcfg",
+        "type": "u8",
+        "fields":[
+            { "bits": 0, "name": "read" ,"attr" : "rw" ,"desc": ""},
+            { "bits": 1, "name": "write" ,"attr" : "rw" ,"desc": ""},
+            { "bits": 2, "name": "exec" ,"attr" : "rw" ,"desc": ""},
+            { "bits": [4,3], "name": "mode" ,"attr" : "rw" ,"desc": ""},
+            { "bits": [6,5], "name": "resv1" ,"attr" : "ro" ,"desc": ""},
+            { "bits": 7, "name": "lock" ,"attr" : "rw" ,"desc": ""}
+       ]
+    },
+    {
+        "name": "pmpcfg0",
+        "offset": "0x3a0",
+        "default": "0x0",
+        "fields":[
+            { "bits": [7,0], "name": "pmp0cfg", "struct":"pmpcfg", "attr" : "rw", "default": "0x0","desc": ""},
+            { "bits": [15,8], "name": "pmp1cfg", "struct":"pmpcfg", "attr" : "rw", "default": "0x0","desc": ""},
+            { "bits": [23,16], "name": "pmp2cfg", "struct":"pmpcfg", "attr" : "rw", "default": "0x0","desc": ""},
+            { "bits": [31,24], "name": "pmp3cfg", "struct":"pmpcfg", "attr" : "rw", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "pmpcfg1",
+        "offset": "0x3a1",
+        "default": "0x0",
+        "fields":[
+            { "bits": [7,0], "name": "pmp4cfg", "struct":"pmpcfg", "attr" : "rw", "default": "0x0","desc": ""},
+            { "bits": [15,8], "name": "pmp5cfg", "struct":"pmpcfg", "attr" : "rw", "default": "0x0","desc": ""},
+            { "bits": [23,16], "name": "pmp6cfg", "struct":"pmpcfg", "attr" : "rw", "default": "0x0","desc": ""},
+            { "bits": [31,24], "name": "pmp7cfg", "struct":"pmpcfg", "attr" : "rw", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "pmpcfg2",
+        "offset": "0x3a2",
+        "default": "0x0",
+        "fields":[
+            { "bits": [7,0], "name": "pmp8cfg", "struct":"pmpcfg", "attr" : "rw", "default": "0x0","desc": ""},
+            { "bits": [15,8], "name": "pmp9cfg", "struct":"pmpcfg", "attr" : "rw", "default": "0x0","desc": ""},
+            { "bits": [23,16], "name": "pmp10cfg", "struct":"pmpcfg", "attr" : "rw", "default": "0x0","desc": ""},
+            { "bits": [31,24], "name": "pmp11cfg", "struct":"pmpcfg", "attr" : "rw", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "pmpcfg3",
+        "offset": "0x3a3",
+        "default": "0x0",
+        "fields":[
+            { "bits": [7,0], "name": "pmp12cfg", "struct":"pmpcfg" ,"attr" : "rw", "default": "0x0","desc": ""},
+            { "bits": [15,8], "name": "pmp13cfg", "struct":"pmpcfg", "attr" : "rw", "default": "0x0","desc": ""},
+            { "bits": [23,16], "name": "pmp14cfg", "struct":"pmpcfg", "attr" : "rw", "default": "0x0","desc": ""},
+            { "bits": [31,24], "name": "pmp15cfg", "struct":"pmpcfg", "attr" : "rw", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "pmpaddr0",
+        "offset": "0x3b0",
+        "default": "0x0",
+        "fields":[
+            { "bits": [1,0], "name": "resv1", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": [31,2], "name": "address", "attr" : "rw", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "pmpaddr1",
+        "offset": "0x3b1",
+        "default": "0x0",
+        "fields":[
+            { "bits": [1,0], "name": "resv1", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": [31,2], "name": "address", "attr" : "rw", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "pmpaddr2",
+        "offset": "0x3b2",
+        "default": "0x0",
+        "fields":[
+            { "bits": [1,0], "name": "resv1", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": [31,2], "name": "address", "attr" : "rw", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "pmpaddr3",
+        "offset": "0x3b3",
+        "default": "0x0",
+        "fields":[
+            { "bits": [1,0], "name": "resv1", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": [31,2], "name": "address", "attr" : "rw", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "pmpaddr4",
+        "offset": "0x3b4",
+        "default": "0x0",
+        "fields":[
+            { "bits": [1,0], "name": "resv1", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": [31,2], "name": "address", "attr" : "rw", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "pmpaddr5",
+        "offset": "0x3b5",
+        "default": "0x0",
+        "fields":[
+            { "bits": [1,0], "name": "resv1", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": [31,2], "name": "address", "attr" : "rw", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "pmpaddr6",
+        "offset": "0x3b6",
+        "default": "0x0",
+        "fields":[
+            { "bits": [1,0], "name": "resv1", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": [31,2], "name": "address", "attr" : "rw", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "pmpaddr7",
+        "offset": "0x3b7",
+        "default": "0x0",
+        "fields":[
+            { "bits": [1,0], "name": "resv1", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": [31,2], "name": "address", "attr" : "rw", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "pmpaddr8",
+        "offset": "0x3b8",
+        "default": "0x0",
+        "fields":[
+            { "bits": [1,0], "name": "resv1", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": [31,2], "name": "address", "attr" : "rw", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "pmpaddr9",
+        "offset": "0x3b9",
+        "default": "0x0",
+        "fields":[
+            { "bits": [1,0], "name": "resv1", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": [31,2], "name": "address", "attr" : "rw", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "pmpaddr10",
+        "offset": "0x3ba",
+        "default": "0x0",
+        "fields":[
+            { "bits": [1,0], "name": "resv1", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": [31,2], "name": "address", "attr" : "rw", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "pmpaddr11",
+        "offset": "0x3bb",
+        "default": "0x0",
+        "fields":[
+            { "bits": [1,0], "name": "resv1", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": [31,2], "name": "address", "attr" : "rw", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "pmpaddr12",
+        "offset": "0x3bc",
+        "default": "0x0",
+        "fields":[
+            { "bits": [1,0], "name": "resv1", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": [31,2], "name": "address", "attr" : "rw", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "pmpaddr13",
+        "offset": "0x3bd",
+        "default": "0x0",
+        "fields":[
+            { "bits": [1,0], "name": "resv1", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": [31,2], "name": "address", "attr" : "rw", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "pmpaddr14",
+        "offset": "0x3be",
+        "default": "0x0",
+        "fields":[
+            { "bits": [1,0], "name": "resv1", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": [31,2], "name": "address", "attr" : "rw", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "pmpaddr15",
+        "offset": "0x3bf",
+        "default": "0x0",
+        "fields":[
+            { "bits": [1,0], "name": "resv1", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": [31,2], "name": "address", "attr" : "rw", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "mvendorid",
+        "offset": "0xf11",
+        "default": "0x0",
+        "fields":[
+            { "bits": [6,0], "name": "offset", "attr" : "ro", "default": "0x0","desc": ""},
+            { "bits": [31,7], "name": "bank", "attr" : "ro", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "marchid",
+        "offset": "0xf12",
+        "default": "0x0",
+        "fields":[
+            { "bits": [31,0], "name": "id", "attr" : "ro", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "mimpid",
+        "offset": "0xf13",
+        "default": "0x0",
+        "fields":[
+            { "bits": [31,0], "name": "id", "attr" : "ro", "default": "0x0","desc": ""}
+        ]
+    },
+    {
+        "name": "mhartid",
+        "offset": "0xf14",
+        "default": "0x0",
+        "fields":[
+            { "bits": [31,0], "name": "id", "attr" : "ro", "default": "0x0","desc": ""}
+        ]
+    }
+]
