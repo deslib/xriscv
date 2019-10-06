@@ -6,7 +6,7 @@
 
 int boot(){
     //xuart_putchar('>');
-    xuart_puts("Hello XRISCV!\n");
+    //xuart_puts("Hello XRISCV!\n");
     test();
 
     while(1){}
