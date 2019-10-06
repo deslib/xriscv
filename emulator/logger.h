@@ -6,8 +6,8 @@
 #define DEEP_DEBUG 100
 #define MAX_LOG_SIZE  1024
 
-#define LOG_LEVEL DEEP_DEBUG 
-//#define LOG_LEVEL DEBUG 
+//#define LOG_LEVEL DEEP_DEBUG 
+#define LOG_LEVEL DEBUG 
 //#define LOG_LEVEL INFO 
 
 

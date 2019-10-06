@@ -289,7 +289,7 @@ void exec(){
             update_tested(load_funct3_list,load_funct3_tested,5,funct3);
             ram_addr =(operand1_signed + imm_signed); 
             ram_data = (i32) get_mem(ram_addr);
-            log_deep_debug_direct("Load %08x from %08x\n",ram_data,ram_addr);
+            log_debug_direct("Load %08x from %08x\n",ram_data,ram_addr);
             if(funct3 == 0){ //lb rd, offset(rs1): x[rd] = sext(M[x[rs1] + sext(offset)][7:0])
                 ram_data_ib = (i8)((ram_data >> (8*(ram_addr&3))) & 0xff);
                 xreg[reg_dest_sel] = ram_data < 0? (ram_data_ib | 0xffffff80) : ram_data_ib;
@@ -310,7 +310,7 @@ void exec(){
             break;
         case OP_STORE:
             update_tested(store_funct3_list,store_funct3_tested,3,funct3);
-            log_deep_debug_direct("Store %08x to %08x(%08x,%08x)\n",operand2_signed,operand1_signed+imm_signed,operand1_signed,imm_signed);
+            log_debug_direct("Store %08x to %08x(%08x,%08x)\n",operand2_signed,operand1_signed+imm_signed,operand1_signed,imm_signed);
             if(funct3 == 0){ //sb rs2, offset(rs1): M[x[rs1]+sext(offset)=x[rs2][7:0]
                 set_mem((operand1_signed+imm_signed), operand2_signed, DBYTE);
             }else if(funct3 == 1){ //sh rs2, offset(rs1): M[x[rs1]+sext(offset)=x[rs2][15:0]

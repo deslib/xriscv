@@ -40,7 +40,7 @@ logic ram_rd_ready;
 logic ram_wr_req;
 logic ram_wr_ready;
 //wire  ram_wr_ready = 1;
-wire d_is_from_io = addr < `RAM_BASE_ADDR;
+wire d_is_from_io = (addr & `RAM_BASE_ADDR_MASK) ? 1'b0 : 1'b1;
 logic d_is_from_io_dly;
 
 always @(posedge clk or negedge rstb) begin
@@ -104,7 +104,7 @@ assign ram_wr_data = wr_data;
 assign io_rd_req = d_is_from_io ? rd_req : 1'b0;
 
 // addr, addr
-assign ram_addr = (addr - `RAM_BASE_ADDR) >> 2;
-assign io_addr = (16'h0 | (addr - `IO_BASE_ADDR)) & 16'hFFFC;
+assign ram_addr = (addr & `RAM_BASE_ADDR_UNMASK) >> 2;
+assign io_addr = addr & `IO_BASE_ADDR_UNMASK;
 
 endmodule

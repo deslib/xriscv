@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 int boot(){
-    xuart_putchar('>');
+    //xuart_putchar('>');
     xuart_puts("Hello XRISCV!\n");
     test();
 

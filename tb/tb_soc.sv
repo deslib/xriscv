@@ -1,6 +1,6 @@
 `timescale 1ns/100ps
 
-`define SW_UPGRADE
+//`define SW_UPGRADE
 
 module tb_soc;
 localparam PEIROD = 20;

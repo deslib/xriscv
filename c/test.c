@@ -175,10 +175,10 @@ void test_reg(){
 
 
 void test(){
-    test_imm();
-    test_uiapc();
-    test_load();
-    test_reg();
+    //test_imm();
+    //test_uiapc();
+    //test_load();
+    //test_reg();
     regfile.led_btn.led = 0x5;
     test_alu_16();
     test_alu_32();

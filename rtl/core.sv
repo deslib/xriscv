@@ -67,6 +67,8 @@ module core(
     logic [2:0] funct3;
     logic [6:0] funct7;
 
+    wire [4:0] src1_pre = i_data[19:15];
+    wire [4:0] src2_pre = i_data[24:20];
 
     logic [31:1][31:0] x_reg;
     wire [31:0][31:0]x = {x_reg,32'h0};
@@ -74,20 +76,6 @@ module core(
     wire wait_rd_data = d_rd_req & ~d_rd_ready;
     wire wait_wr_data = d_wr_req & ~d_wr_ready;
     wire stalling = wait_rd_data | wait_wr_data;
-    //logic stalling;
-    //always @(posedge clk or negedge rstb) begin
-    //    if(~rstb) begin
-    //        stalling <= 0;
-    //    end else begin
-    //        if( (d_rd_req&d_rd_ready) | (d_wr_req&d_wr_ready) ) begin
-    //            stalling <= 0;
-    //        end else if(~pipe_flush_pre&(is_op_load|is_op_store)) begin
-    //            stalling <= 1;
-    //        end
-    //    end
-    //end
-     
-
 
     /****************************************************************************
     *       Opcode Decoder
@@ -224,7 +212,7 @@ module core(
         if(~rstb) begin
             d_wr_req <= 1'b0;
         end else begin
-            if(d_wr_req&d_wr_ready&~is_op_store) begin
+            if(pipe_flush_pre | (d_wr_req&d_wr_ready&~is_op_store)) begin
                 d_wr_req <= 1'b0;
             end else if(is_op_store)begin
                 d_wr_req <= 1'b1;
@@ -260,8 +248,16 @@ module core(
     /****************************************************************************
     *         PC control (Jump or Branch)
     ****************************************************************************/
-    wire operand_lt = operand1 < operand2;
-    wire operand_ltu = $unsigned(operand1) < $unsigned(operand2);
+    logic operand_eq;
+    logic operand_lt;
+    logic operand_ltu;
+    always @(posedge clk) begin
+        operand_eq <= x[src1_pre] == x[src2_pre];
+        operand_lt <= $signed(x[src1_pre]) < $signed(x[src2_pre]);
+        operand_ltu <= $unsigned(x[src1_pre]) < $unsigned(x[src2_pre]);
+    end
+    //wire operand_lt = operand1 < operand2;
+    //wire operand_ltu = $unsigned(operand1) < $unsigned(operand2);
     wire branch = op_branch & ( ( (funct3 == 3'b000) & (operand1 == operand2)) |
                                 ( (funct3 == 3'b001) & (operand1 != operand2)) |
                                 ( (funct3 == 3'b100) & operand_lt)  |
@@ -276,6 +272,27 @@ module core(
             pc <= next_pc;
         end
     end
+
+    //wire [31:0] jalr_addr = x[src1_pre] + imm_signed;
+    //wire [31:0] jal_addr = next_pc + imm_signed - 4;
+    //always @(posedge clk or negedge rstb) begin
+    //    if(~rstb) begin
+    //        next_pc <= 0;
+    //    end else begin
+    //        if(pipe_flush_pre) begin
+    //            next_pc <= next_pc + 4;
+    //        end else if(stalling) begin
+    //            next_pc <= next_pc;
+    //        end else if(op_jal|branch) begin
+    //            next_pc <= jal_addr;
+    //        end else if(op_jalr) begin
+    //            next_pc <= {jalr_addr[31:1],1'b0};
+    //        end else begin
+    //            next_pc <= pc + 4;
+    //        end
+    //    end
+    //end 
+
 
     wire [31:0] jalr_addr = operand1 + imm_signed;
     always @(*) begin
