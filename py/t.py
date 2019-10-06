@@ -19,7 +19,7 @@ def bin2rxm(in_fn,rom_fn,ram_fn,mif_fn,ram_bin_fn):
     f_ram_bin = open(ram_bin_fn,'wb')
     ram_bin = bytearray()
     for i in range(len(bin_bytes)):
-        if i > RAM_BASE_ADDR and i < RAM_BASE_ADDR + RAM_SIZE:
+        if i >= RAM_BASE_ADDR and i < RAM_BASE_ADDR + RAM_SIZE:
             ram_bin.append(bin_bytes[i])
     f_ram_bin.write(bytes(ram_bin))
     f_ram_bin.close()

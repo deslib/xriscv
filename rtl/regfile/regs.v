@@ -21,7 +21,7 @@ module regfile(
 always @(posedge clk or negedge rstb) begin
     if(~rstb) begin
         uart_send_byte <= 0;
-        uart_cfg <= 8'd17;
+        uart_cfg <= 8'd6;
         led_b <= 0;
     end else if(wr_en) begin
         case(wr_addr) 

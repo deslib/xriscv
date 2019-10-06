@@ -34,11 +34,11 @@ module uart_mgr#(
 
 logic       uart_txfifo_empty;
 logic       uart_rxfifo_full;
+logic       uart_txfifo_rd_en;
 
 logic [7:0] uart_tx_data;
 logic [7:0] uart_rx_data;
 logic       uart_tx_busy;
-wire        uart_txfifo_rd_en = ~uart_txfifo_empty & ~uart_tx_busy;
 logic       uart_tx_valid;
 `ifdef FAST_UART
     assign uart_wr_ready = 1'b1;
@@ -49,11 +49,16 @@ assign uart_rd_ready = 1;
 
 always @(posedge clk or negedge rstb) begin
     if(~rstb) begin
-        uart_tx_valid <= 0;
+        uart_txfifo_rd_en <= 0;
     end else begin
-        uart_tx_valid <= uart_txfifo_rd_en;
+        if(~uart_txfifo_empty & ~uart_tx_busy & ~uart_txfifo_rd_en) begin
+            uart_txfifo_rd_en <= 1;
+        end else begin
+            uart_txfifo_rd_en <= 0;
+        end
     end
 end
+assign uart_tx_valid = uart_txfifo_rd_en;
  
     
 uart U_UART(

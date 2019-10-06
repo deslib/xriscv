@@ -19,7 +19,7 @@ module uart_sw_upgrader #(
     output logic [XLEN/8-1:0]   uart_ram_we
 );
 
-    logic be_cnt;
+    logic [1:0] be_cnt;
 
     always @(posedge clk or negedge rstb) begin
         if(~rstb) begin
