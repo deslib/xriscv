@@ -53,7 +53,7 @@ module fd(
     logic during_ls_pending;
     wire  is_ls = is_op_load | is_op_store;
     logic jmp_dly; //need to delay one more cycle for jmp i_data in
-    wire  decode_en = ls_done|(~during_ls_pending&~jmp&~jmp_dly);
+    wire  decode_en = (~during_ls_pending&~jmp&~jmp_dly);
 
     /****************************************************************************
     *       Opcode Decoder
