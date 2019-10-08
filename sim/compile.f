@@ -9,6 +9,8 @@
 ../rtl/i_mux.sv
 ../rtl/ram.sv
 ../rtl/rom.sv
+../rtl/fd.sv
+../rtl/ex.sv
 ../rtl/core.sv
 ../rtl/d_mux.sv
 ../rtl/misc/fifo.sv

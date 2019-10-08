@@ -1,6 +1,7 @@
 #include "glb.h"
 #include <stdio.h>
 #include "test.h"
+#include "xuart.h"
 #include "regfile.h"
 
 void test_alu_16(){
@@ -175,10 +176,11 @@ void test_reg(){
 
 
 void test(){
-    test_imm();
-    test_uiapc();
-    test_load();
-    test_reg();
+    xuart_puts("Hello XRISCV!\n");
+    //test_imm();
+    //test_uiapc();
+    //test_load();
+    //test_reg();
     regfile.led_btn.led = 0x5;
     test_alu_16();
     test_alu_32();
