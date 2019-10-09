@@ -6,7 +6,7 @@
 #include "utils.h"
 #include "csr.h"
 
-i32 csr[4096];
+u32 csr[4096];
 
 void csr_init()
 {

@@ -173,12 +173,40 @@ void test_reg(){
     }
 }
 
+void test_csr(){
+    i32 data;
+    data = csrrc_test();
+    if (data != 0x00001800) {
+      printf("csrrc_test failed, data %x != 0x00001800\n",data);
+    }
+    data = csrrci_test();
+    if (data != 0x00001800) {
+      printf("csrrci_test failed, data %x != 0x00001800\n",data);
+    }
+    data = csrrw_test();
+    if (data != 0) {
+      printf("csrrw_test failed, data %x != 0\n",data);
+    }
+    data = csrrwi_test();
+    if (data != 0) {
+      printf("csrrwi_test failed, data %x != 0\n",data);
+    }
+    data = csrrs_test();
+    if (data != 0x00001800) {
+      printf("csrrs_test failed, data %x != 0x00001800\n",data);
+    }
+    data = csrrsi_test();
+    if (data != 0x00001800) {
+      printf("csrrsi_test failed, data %x != 0x00001800\n",data);
+    }
+}
 
 void test(){
     test_imm();
     test_uiapc();
     test_load();
     test_reg();
+    test_csr();
     regfile.led_btn.led = 0x5;
     test_alu_16();
     test_alu_32();

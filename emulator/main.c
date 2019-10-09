@@ -7,6 +7,7 @@
 
 i32 imm_signed = 0;
 u32 imm_unsigned = 0;
+u32 csr_reg = 0;
 
 u8 opcode;
 u8 opcode_6t2;
@@ -57,6 +58,9 @@ u8 reg_000_funct7_tested[8] = {0,0};
 u8 reg_101_funct7_list[8] = {0,0x20};
 u8 reg_101_funct7_tested[8] = {0,0};
 
+u8 csr_funct3_list[6] = {1,2,3,5,6,7};
+u8 csr_funct3_tested[6] = {0,0,0,0,0,0};
+
 FILE *fp_uart;
 
 FILE *fp_pc; //for rtl debug
@@ -85,6 +89,7 @@ void end_sim(){
     log_tested("Imm101", imm_101_funct7_tested,2);
     log_tested("Reg000", reg_000_funct7_tested,2);
     log_tested("Reg101", reg_101_funct7_tested,2);
+    log_tested("CSR", csr_funct3_tested,6);
 
     exit(0);
 }
@@ -216,10 +221,19 @@ void decode(){
             imm_unsigned = (get_bits(code,25,7)<<5) | get_bits(code,7,5);
             imm_signed = u2i(imm_unsigned,12);
         }
-    }else if(opcode_4t2 == 4){ //addi, slti, sltiu, xori, ori, andi, slli, srli and srai
-        imm_unsigned = get_bits(code,20,12);
-        imm_signed = u2i(imm_unsigned,12);
-        shamt = get_bits(code,20,5);
+    }else if(opcode_4t2 == 4){
+        if(opcode_6t5 == 0){  //addi, slti, sltiu, xori, ori, andi, slli, srli and srai
+            imm_unsigned = get_bits(code,20,12);
+            imm_signed = u2i(imm_unsigned,12);
+            shamt = get_bits(code,20,5);
+        }else if(opcode_6t5 == 3){
+            if(funct3 != 0) { //csrrw, csrrs, csrrc, csrrwi, csrrsi, csrrci
+                csr_reg = get_bits(code,20,12);
+            }
+            else{ //ecall, ebreak
+                //Do nonthing
+            }
+        }
     }
     log_debug("Tick = %d PC = %4x code=%08x rs = (%d,%d) rd = %d imm=(%u,%d) \n",tick,pc,code,reg1_src_sel,reg2_src_sel,reg_dest_sel,imm_unsigned,imm_signed);
     tick += 1;
@@ -241,6 +255,7 @@ void exec(){
     u16 ram_data_ih;
     u32 ram_data_uw;
     u32 ram_data_iw;
+    u32 temp;
     update_tested(opcode_6t2_list,opcode_6t2_tested,9,opcode_6t2);
     switch(opcode_6t2){
         case OP_LUI: //lui rd, immediate: x[rd] = sext(immediate[31:12] << 12)
@@ -267,7 +282,7 @@ void exec(){
             update_tested(branch_funct3_list,branch_funct3_tested,6,funct3);
             if((funct3 & 6) == 0){
                 //beq rs1, rs2, offset: if (rs1 == rs2) pc += sext(offset)
-                //bne rs1, rs2, offset: if (rs1 ≠ rs2) pc += sext(offset)
+                //bne rs1, rs2, offset: if (rs1 != rs2) pc += sext(offset)
                 jmp = (funct3&1) ^ (operand1_signed == operand2_signed);
             }else if( (funct3 & 6) == 4){
                 //blt rs1, rs2, offset: if (rs1 <s rs2) pc += sext(offset)
@@ -327,20 +342,20 @@ void exec(){
             update_tested(imm_funct3_list,imm_funct3_tested,8,funct3);
             if(funct3 == 0){ //addi rd, rs1, immediate: x[rd] = x[rs1] + sext(immediate)
                 xreg[reg_dest_sel] = operand1_signed + imm_signed;
-            }else if(funct3 == 1){ //slli: x[rd]=x[rs1]≪shamt
+            }else if(funct3 == 1){ //slli: x[rd]=x[rs1]<<shamt
                 xreg[reg_dest_sel] = operand1_signed << shamt;
-            }else if(funct3 ==2){ //slti rd, rs1, immediate: x[rd]=(x[rs1]<𝑠sext(immediate))
+            }else if(funct3 ==2){ //slti rd, rs1, immediate: x[rd]=(x[rs1]<(s)sext(immediate))
                 xreg[reg_dest_sel] = operand1_signed < imm_signed? 1 : 0;
-            }else if(funct3 == 3){ //sltiu rd, rs1, immediate: x[rd]=(x[rs1]<𝑢sext(immediate))
+            }else if(funct3 == 3){ //sltiu rd, rs1, immediate: x[rd]=(x[rs1]<(u)sext(immediate))
                 xreg[reg_dest_sel] = operand1_unsigned < imm_unsigned? 1 : 0;
             }else if(funct3 == 4){ //xori rd, rs1, immediate: x[rd]=x[rs1] ^ sext(immediate)
                 xreg[reg_dest_sel] = operand1_signed ^ imm_signed;
             }else if(funct3 == 5){ 
                 update_tested(imm_101_funct7_list,imm_101_funct7_tested,2,funct7);
-                if(funct7 == 0){ //srli rd, rs1, shamt: x[rd]=(x[rs1]>>𝑢shamt)
+                if(funct7 == 0){ //srli rd, rs1, shamt: x[rd]=(x[rs1]>>(u)shamt)
                     xreg[reg_dest_sel] = operand1_unsigned >> shamt;
                 }
-                else{ ////srai rd, rs1, shamt: x[rd]=(x[rs1]>>𝑠shamt)
+                else{ ////srai rd, rs1, shamt: x[rd]=(x[rs1]>>(s)shamt)
                     xreg[reg_dest_sel] = operand1_signed >> shamt; 
                 }
             }else if(funct3 == 6){ //ori: x[rd]=x[rs1] | sext(immediate)
@@ -362,27 +377,59 @@ void exec(){
                 }
             }else if(funct3 == 1){ //sll rd, rs1, rs2: x[rd]=x[rs1]<<x[rs2]
                 xreg[reg_dest_sel] = operand1_signed << (operand2_signed &0x1f);
-            }else if(funct3 == 2){ //slt rd, rs1, rs2: x[rd]=(x[rs1]<𝑠x[rs2])
+            }else if(funct3 == 2){ //slt rd, rs1, rs2: x[rd]=(x[rs1]<(s)x[rs2])
                 xreg[reg_dest_sel] = operand1_signed < operand2_signed? 1: 0;
-            }else if(funct3 == 3){ //sltu rd, rs1, rs2: x[rd]=(x[rs1]<𝑢x[rs2])
+            }else if(funct3 == 3){ //sltu rd, rs1, rs2: x[rd]=(x[rs1]<(u)x[rs2])
                 xreg[reg_dest_sel] = operand1_unsigned < operand2_unsigned? 1: 0;
             }else if(funct3 == 4){ //xor rd, rs1, rs2: x[rd]=x[rs1] ^ x[rs2]
                 xreg[reg_dest_sel] = operand1_unsigned ^ operand2_unsigned;
             }else if(funct3 == 5){ 
                 update_tested(reg_101_funct7_list,reg_101_funct7_tested,2,funct7);
-                if(funct7 == 0){ //srl rd, rs1, rs2: x[rd]=(x[rs1]>>𝑢x[rs2])
+                if(funct7 == 0){ //srl rd, rs1, rs2: x[rd]=(x[rs1]>>(u)x[rs2])
                     xreg[reg_dest_sel] = operand1_unsigned >> (operand2_unsigned & 0x1f);
                 }
-                else{ //sra rd, rs1, rs2: x[rd]=(x[rs1]>>𝑠x[rs2])
+                else{ //sra rd, rs1, rs2: x[rd]=(x[rs1]>>(s)x[rs2])
                     xreg[reg_dest_sel] = operand1_signed >> (operand2_signed & 0x1f);
                 }
-            }else if(funct3 == 6){ //or rd, rs1, rs2: x[rd]=x[rs1] | 𝑥[𝑟𝑠2]
+            }else if(funct3 == 6){ //or rd, rs1, rs2: x[rd]=x[rs1] | x[rs2]
                 xreg[reg_dest_sel] = operand1_unsigned | operand2_unsigned;
             }else if(funct3 == 7){ //and rd, rs1, rs2: x[rd] = x[rs1] & x[rs2]
                 xreg[reg_dest_sel] = operand1_unsigned & operand2_unsigned;
             }
             pc += 4;
             log_deep_debug_direct("REG \n");
+            break;
+        case OP_E_CSR:
+            update_tested(csr_funct3_list,csr_funct3_tested,6,funct3);
+            if(funct3 == 0){ // ecall and ebreak
+                //TBD
+            }
+            else if(funct3 == 1){ // csrrw rd, csr, zimm[4:0]: t=CSRs[csr]; CSRs[csr]=x[rs1]; x[rd]=t
+                temp = csr[csr_reg];
+                csr[csr_reg] = operand1_unsigned;
+                xreg[reg_dest_sel] = temp;
+            }else if(funct3 == 2){ // csrrs rd, csr, rs1: t=CSRs[csr]; CSRs[csr]= t | x[rs1]; x[rd]=t
+                temp = csr[csr_reg];
+                csr[csr_reg] = temp | operand1_unsigned;
+                xreg[reg_dest_sel] = temp;
+            }else if(funct3 == 3){ // csrrc rd, csr, rs1: t=CSRs[csr]; CSRs[csr]= t & ~x[rs1]; x[rd]=t
+                temp = csr[csr_reg];
+                csr[csr_reg] = temp & (~operand1_unsigned);
+                xreg[reg_dest_sel] = temp;
+            }else if(funct3 == 5){ // csrrwi rd, csr, zimm[4:0]: x[rd]=CSRs[csr]; CSRs[csr]= zimm
+                xreg[reg_dest_sel] = csr[csr_reg];
+                csr[csr_reg] = operand1_unsigned;
+            }else if(funct3 == 6){ // csrrsi rd, csr, zimm[4:0]: t=CSRs[csr]; CSRs[csr]= t | zimm; x[rd]=t
+                temp = csr[csr_reg];
+                csr[csr_reg] = temp | operand1_unsigned;
+                xreg[reg_dest_sel] = temp;
+            }else if(funct3 == 7){ // csrrci rd, csr, rs1: t=CSRs[csr]; CSRs[csr]= t & ~zimm; x[rd]=t
+                temp = csr[csr_reg];
+                csr[csr_reg] = temp & (~operand1_unsigned);
+                xreg[reg_dest_sel] = temp;
+            }
+            pc += 4;
+            log_deep_debug_direct("CSR \n");
             break;
     }
     xreg[0] = 0;// some instruction will set reg[0]. But it is hard wired as 0 in hardware;

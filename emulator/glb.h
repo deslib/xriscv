@@ -65,6 +65,7 @@ typedef long long int i64;
 #define OP_STORE     0x8
 #define OP_IMM       0x4
 #define OP_REG       0xc
+#define OP_E_CSR     0x1c
 
 #define ALU_AOS      0x0
 #define ALU_SLL      0x1
