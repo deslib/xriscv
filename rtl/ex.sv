@@ -157,21 +157,6 @@ module ex(
                                 ( (funct3 == 3'b110) & operand_ltu ) |
                                 ( (funct3 == 3'b111) & ~operand_ltu ) );
                             
-    //always @(posedge clk) begin
-    //    jmp_addr <= (branch | op_jal) ? pc + imm_signed : reg1 + imm_signed;
-    //end
-
-    //always @(posedge clk or negedge rstb) begin
-    //    if(~rstb) begin
-    //        jmp <= 0;
-    //    end else begin
-    //        if(ex_valid&(branch|op_jal|op_jalr)&~jmp) begin
-    //            jmp <= 1;
-    //        end else begin
-    //            jmp <= 0;
-    //        end
-    //    end
-    //end
     assign jmp = ex_valid & (branch|op_jal|op_jalr);
     assign jmp_addr = (branch | op_jal) ? ex_pc + imm_signed : reg1 + imm_signed;
 

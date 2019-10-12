@@ -1,5 +1,7 @@
 `ifndef __GLB__
 
+`define UART
+
 `define OP_LUI      5'b01_101
 `define OP_AUIPC    5'b00_101
 `define OP_JAL      5'b11_011
