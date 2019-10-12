@@ -27,6 +27,12 @@
 .global or_test
 .global and_test
 
+.global csrrw_test
+.global csrrwi_test
+.global csrrs_test
+.global csrrsi_test
+.global csrrc_test
+.global csrrci_test
 
 # input: a0 - 0: get auipc symbol address / 1: get auipc pc
 # output: a0 == 0? a0 = pc00 symbol address : a0 = pc 
@@ -146,4 +152,38 @@ or_test:
 
 and_test:
     and a0, a0, a1
+    ret
+
+csrrs_test:
+    # 0x300: mstatus_reg
+    xor a0, a0, a0
+    csrrs a0, 0x300, a0
+    csrrs a0, 0x300, a0
+    ret
+
+csrrsi_test:
+    csrrsi a0, 0x300, 0
+    csrrs a0, 0x300, a0
+    ret
+
+csrrc_test:
+    xor a1, a1, a1
+    csrrc a0, 0x300, a1
+    csrrw a0, 0x300, a0
+    ret
+
+csrrci_test:
+    csrrci a0, 0x300, 0
+    csrrw a0, 0x300, a0
+    ret
+
+csrrwi_test:
+    csrrwi a1, 0x300, 0
+    csrrw a0, 0x300, a1
+    ret
+
+csrrw_test:
+    xor a0, a0, a0
+    csrrw a1, 0x300, a0
+    csrrw a0, 0x300, a1
     ret

@@ -26,3 +26,10 @@ i32 srl_test(i32 data1, i32 data2);
 i32 sra_test(i32 data1, i32 data2);
 i32 or_test(i32 data1, i32 data2);
 i32 and_test(i32 data1, i32 data2);
+
+i32 csrrw_test();
+i32 csrrwi_test();
+i32 csrrs_test();
+i32 csrrsi_test();
+i32 csrrc_test();
+i32 csrrci_test();
