@@ -40,7 +40,7 @@ logic ram_rd_ready;
 logic ram_wr_req;
 logic ram_wr_ready;
 //wire  ram_wr_ready = 1;
-wire d_is_from_io = (addr & `RAM_BASE_ADDR_MASK) ? 1'b0 : 1'b1;
+wire d_is_from_io = (addr & `RAM_BASE_ADDR_MASK) ? 1'b1 : 1'b0;
 logic d_is_from_io_dly;
 
 always @(posedge clk or negedge rstb) begin

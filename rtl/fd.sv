@@ -58,18 +58,18 @@ module fd(
     /****************************************************************************
     *       Opcode Decoder
     ****************************************************************************/
-    always @(posedge clk or negedge rstb) begin
-        if(~rstb) begin
-            op_lui       <= 0;
-            op_auipc     <= 0;
-            op_jal       <= 0;
-            op_jalr      <= 0;
-            op_branch    <= 0;
-            op_load      <= 0;
-            op_store     <= 0;
-            op_imm       <= 0;
-            op_reg       <= 0;
-        end else begin
+    always @(posedge clk) begin
+        //if(~rstb) begin
+        //    op_lui       <= 0;
+        //    op_auipc     <= 0;
+        //    op_jal       <= 0;
+        //    op_jalr      <= 0;
+        //    op_branch    <= 0;
+        //    op_load      <= 0;
+        //    op_store     <= 0;
+        //    op_imm       <= 0;
+        //    op_reg       <= 0;
+        //end else begin
             if(decode_en) begin
                 op_lui       <= is_op_lui;
                 op_auipc     <= is_op_auipc;
@@ -81,7 +81,7 @@ module fd(
                 op_imm       <= is_op_imm;
                 op_reg       <= is_op_reg;
             end
-        end
+        //end
     end
 
     /****************************************************************************

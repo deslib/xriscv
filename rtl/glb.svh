@@ -22,15 +22,13 @@
 
 `define PC_INIT     0
 
-`define ROM_BASE_ADDR           16'h0
-`define ROM_SIZE                16'h800
-`define RAM_BASE_ADDR           16'h4000
-`define RAM_BASE_ADDR_MASK      16'hc000
-`define RAM_BASE_ADDR_UNMASK    16'h3fff
-`define RAM_SIZE                16'h4000
-`define IO_BASE_ADDR            16'h800 
-`define IO_BASE_ADDR_UNMASK     16'h7fc 
-`define IO_SIZE                 16'h400
+`define RAM_BASE_ADDR           16'h8000
+`define RAM_BASE_ADDR_MASK      16'h8000
+`define RAM_BASE_ADDR_UNMASK    16'h7fff
+`define RAM_SIZE                16'h8000
+`define IO_BASE_ADDR            16'h8000 
+`define IO_BASE_ADDR_UNMASK     16'h7ffc 
+`define IO_SIZE                 16'h1000
 
 `define LOG_CORE(x) \
     `ifdef DBG \

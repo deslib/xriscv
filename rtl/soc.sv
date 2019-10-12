@@ -1,9 +1,9 @@
 `include "glb.svh"
+(* keep_hierarchy = "yes" *)
 
 module soc#(
     parameter XLEN = 32,
     parameter ADDR_LEN = 16,
-    parameter ROM_ADDR_LEN = 9,
     parameter RAM_ADDR_LEN = ADDR_LEN-2
 )(
     input clk,
@@ -16,12 +16,8 @@ module soc#(
 
 `include "reg_decl.vh"
 
-logic [RAM_ADDR_LEN-1:0]    i_ram_addr;
-logic [ROM_ADDR_LEN-1:0]    i_rom_addr;
 logic [31:0]                i_addr;
 
-logic [XLEN-1:0]            i_rom_data;
-logic [XLEN-1:0]            i_ram_data;
 logic [XLEN-1:0]            i_data;
 
 logic [31:0]                d_addr;
@@ -80,19 +76,6 @@ always @(posedge clk or negedge rstb_in) begin
     end
 end
 wire rstb = rstb_in_pipe[1];
-
-i_mux #(
-    .XLEN(32),
-    .ADDR_LEN(ADDR_LEN)
-)U_I_MUX(
-    .addr(i_addr[ADDR_LEN-1:0]),
-    .rd_data(i_data),
-
-    .rom_addr(i_rom_addr),
-    .rom_data(i_rom_data),
-    .ram_addr(i_ram_addr),
-    .ram_data(i_ram_data)
-);
 
 d_mux#(
     .XLEN(32),
@@ -155,41 +138,26 @@ ram_sdp #(
     .addra(ram_addr),
     .dina(ram_wr_data),
     .douta(d_ram_rd_data),
-    .addrb(i_ram_addr),
-    .doutb(i_ram_data)
+    .addrb(i_addr[ADDR_LEN-1:2]),
+    .doutb(i_data)
 );
 `else
-    
-core_ram U_RAM(
-	.address_a(ram_addr),
-	.address_b(i_ram_addr),
-	.byteena_a(ram_we),
-	.clock(clk),
-	.data_a(ram_wr_data),
-	.data_b(),
-	.wren_a(d_ram_en|uart_ram_wr_en),
-	.wren_b(1'b0),
-	.q_a(d_ram_rd_data),
-	.q_b(i_ram_data)
-);
-`endif
 
-`ifdef SIM
-rom #(
-    .DATA_WIDTH(32),
-    .DATA_DEPTH(2**(ROM_ADDR_LEN)),
-    .INIT_FN("../c/xriscv.rom")
-)U_ROM(
-    .clk(clk),
-    .addr(i_rom_addr),
-    .dout(i_rom_data)
+core_ram U_RAM(
+    .clka(clk),
+    .ena(d_ram_en|uart_ram_wr_en),
+    .wea(ram_we),
+    .addra(ram_addr),
+    .dina(ram_wr_data),
+    .douta(d_ram_rd_data),
+    .clkb(clk),
+    .enb(1'b0),
+    .web('h0),
+    .dinb(),
+    .addrb(i_addr[ADDR_LEN-1:2]),
+    .doutb(i_data)
 );
-`else
-core_rom U_ROM(
-	.address(i_rom_addr),
-	.clock(clk),
-	.q(i_rom_data)
-);
+    
 `endif
 
 regfile U_REGFILE(
@@ -235,6 +203,8 @@ end
 `else
     assign uart_status[0] = uart_txfifo_full;
 `endif
+
+`ifdef UART
 assign uart_status[1] = uart_rxfifo_empty;
 assign uart_status[7:2] = 'h0;
 assign uart_wr_req = io_wr_req & (io_addr == 'h0) & d_be[1];
@@ -268,6 +238,10 @@ uart_mgr#(
     .rx(uart_rx),
     .tx(uart_tx)
 );
+`else
+assign uart_wr_ready = 1;
+assign uart_ram_wr_en = 0;
+`endif
     
 `ifdef SIM
     integer fp;

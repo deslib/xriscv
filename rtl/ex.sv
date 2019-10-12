@@ -40,6 +40,10 @@ module ex(
     input        [31:0]         d_rd_data
 );
 
+    localparam logic [31:0] ALL0 = 32'h0;
+    localparam logic [31:0] ALL1 = 32'hFFFF_FFFF; 
+    (* ram_style = "distributed" *) logic [31:0] x_reg[0:31];
+
     `ifdef DBG
         integer fp;
         integer tick;
@@ -47,33 +51,39 @@ module ex(
             tick = 0;
             fp = $fopen("core.log","w");
         end
-        //logic [31:0] prev_pc;
-        //always @(posedge clk) begin
-        //    prev_pc <= pc;
-        //end
+        wire [31:0][31:0] x;
+        genvar i;
+        generate 
+            for(i=0;i<32;i++) begin
+                assign x[i] = x_reg[i];
+            end
+        endgenerate
     `endif
 
-    localparam logic [31:0] ALL0 = 32'h0;
-    localparam logic [31:0] ALL1 = 32'hFFFF_FFFF; 
 
-    logic [31:1][31:0] x_reg;
-    wire [31:0][31:0]x = {x_reg,32'h0};
+    initial begin
+        int i;
+        for(i=0;i<32;i++) begin
+            x_reg[i] = 0;
+        end
+    end
 
-    wire [31:0] reg1 = x[src1];
-    wire [31:0] reg2 = x[src2];
+    wire [31:0] reg1 = x_reg[src1];
+    wire [31:0] reg2 = x_reg[src2];
 
     wire signed [31:0] operand1 = reg1;
     wire operand2_is_unsigned = (funct3 == 3);
     wire signed [31:0] operand2 = (op_reg|op_branch|op_store) ? reg2 : (operand2_is_unsigned ? imm_unsigned : imm_signed);
 
     wire [31:0] operand_rs =(funct7[5] ? operand1 >>> operand2[4:0] : operand1 >> operand2[4:0]);
+    logic [31:0] dest_reg;
+    logic dest_reg_wr_en;
 
-    always @(posedge clk or negedge rstb) begin
-        if(~rstb) begin
-            x_reg[31:1] <= 0;
-        end else begin
+    always @(*) begin
+            dest_reg_wr_en = 0;
+            dest_reg = 0;
             if(d_rd_req&d_rd_ready) begin
-                x_reg[dest] <= funct3 == 3'b000 ? (
+                dest_reg = funct3 == 3'b000 ? (
                                     d_addr[1:0] == 0 ? {d_rd_data[7] ? ALL1[31:8] : ALL0[31:8],d_rd_data[7:0]} :
                                     d_addr[1:0] == 1 ? {d_rd_data[15] ? ALL1[31:8] : ALL0[31:8], d_rd_data[15:8]} :
                                     d_addr[1:0] == 2 ? {d_rd_data[23] ? ALL1[31:8] : ALL0[31:8], d_rd_data[23:16]} :
@@ -93,19 +103,23 @@ module ex(
                                funct3 == 3'b101 ? (
                                    d_addr[1] == 0 ? {ALL0[31:16],d_rd_data[15:0]} : {ALL0[31:16],d_rd_data[31:16]}
                                ) : 32'h0;
+                dest_reg_wr_en = 1;
                 `LOG_CORE($sformatf("PC=%05x OP_LOAD %08x from %08x\n", ex_pc, d_rd_data, d_addr));
             end else if(ex_valid) begin
                 if(op_lui) begin
-                    x_reg[dest] <= imm_signed;
+                    dest_reg = imm_signed;
+                    dest_reg_wr_en = 1;
                     `LOG_CORE($sformatf("PC=%05x LUI\n",ex_pc));
                 end else if(op_auipc) begin
-                    x_reg[dest] <= ex_pc + $signed(imm_signed&32'hFFFFF000) + 4;
+                    dest_reg = ex_pc + $signed(imm_signed&32'hFFFFF000) + 4;
+                    dest_reg_wr_en = 1;
                     `LOG_CORE($sformatf("PC=%05x AUIPC \n",ex_pc));
                 end else if(op_jal|op_jalr) begin
-                    x_reg[dest] <= ex_pc + 4;
+                    dest_reg = ex_pc + 4;
+                    dest_reg_wr_en = 1;
                     `LOG_CORE($sformatf("PC=%05x OP_JAL|OP_JALR\n",ex_pc));
                 end else if(op_imm|op_reg) begin
-                    x_reg[dest] <= funct3 == 3'b000 ? ( (funct7[5]&op_reg) ? operand1 - operand2 : operand1 + operand2) :
+                    dest_reg = funct3 == 3'b000 ? ( (funct7[5]&op_reg) ? operand1 - operand2 : operand1 + operand2) :
                                    funct3 == 3'b001 ? operand1 << operand2[4:0] :
                                    funct3 == 3'b010 ? (operand1 < operand2 ? 32'h1 : 32'h0) :
                                    funct3 == 3'b011 ? ( ($unsigned(operand1) < $unsigned(operand2)) ? 32'h1 : 32'h0) :
@@ -113,10 +127,17 @@ module ex(
                                    funct3 == 3'b101 ? operand_rs :
                                    funct3 == 3'b110 ? operand1 | operand2 :
                                                       operand1 & operand2;
+                    dest_reg_wr_en = 1;
                 end
             end
+    end
+
+    always @(posedge clk) begin
+        if(dest_reg_wr_en & (|dest)) begin
+            x_reg[dest] <= dest_reg;
         end
     end
+     
 
      
 /*******************************************************************************
@@ -210,7 +231,7 @@ module ex(
 
     always @(posedge clk) begin
         if((op_store|op_load)&ex_valid) begin
-            d_addr <= x[src1] + imm_signed;
+            d_addr <= x_reg[src1] + imm_signed;
         end
     end
      
