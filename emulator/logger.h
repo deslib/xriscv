@@ -1,5 +1,7 @@
 #ifndef __LOGGER__
 
+#include <stdarg.h>
+
 #define ERROR 1
 #define INFO  5
 #define DEBUG 10
