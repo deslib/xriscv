@@ -1,4 +1,5 @@
-#ifndef __MAIN__
+#ifndef __MAIN_H__
+#define __MAIN_H__
 
 #include "glb.h"
 

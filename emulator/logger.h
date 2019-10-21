@@ -1,4 +1,5 @@
-#ifndef __LOGGER__
+#ifndef __LOGGER_H__
+#define __LOGGER_H__
 
 #include <stdarg.h>
 
@@ -23,6 +24,4 @@ void log_base(char *level, char *fmt, va_list args_list);
 void log_debug_direct(char *fmt,...);
 void log_deep_debug_direct(char *fmt,...);
 
-#else
-#define __LOGGER__
 #endif

@@ -1,4 +1,5 @@
-#ifndef __RV32I__
+#ifndef __RV32I_H__
+#define __RV32I_H__
 #include "glb.h"
 
 #define OP_I_CODE      0x3                              //bit[1:0] = 11b

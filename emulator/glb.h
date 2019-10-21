@@ -1,4 +1,5 @@
-#ifndef __GLB__
+#ifndef __GLB_H__
+#define __GLB_H__
 
 typedef unsigned char u8;
 typedef unsigned short u16;
@@ -78,7 +79,4 @@ typedef long long int i64;
 
 #define PC_INIT      0
 
-
-#else
-    #define __GLB__
 #endif
