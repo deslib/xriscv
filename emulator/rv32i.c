@@ -411,20 +411,6 @@ void i_exec(u32 code){
     tick += 1;
 }
 
-void log_tested_print(char *name, struct opcode_group *op, u32 length) {
-    u32 i;
-    log_info_direct("  Tested %s: ", name);
-    for (i = 0; i < length; i++){
-        if (op[i].exec != NULL) {
-            if(op[i].count != 0)
-                log_info_direct("1 ");
-            else
-                log_info_direct("0 ");
-       }
-    }
-    log_info_direct("\n");
-}
-
 void i_result(){
     log_deep_debug_direct("RV32I result: \n");
     log_tested_print("Opcode", i_opcodes_group, 32);
@@ -439,7 +425,7 @@ void i_result(){
     log_tested_print("CSR   ", i_opcodes_c, 8);
 }
 
-void  __attribute__((constructor)) opcodes_group_init(){
+void  __attribute__((constructor)) i_opcodes_group_init(){
     u32 i;
 
     opcodes_group[OP_I_CODE].exec = i_exec;

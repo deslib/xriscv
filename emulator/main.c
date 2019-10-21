@@ -26,6 +26,20 @@ u32 dead_loop_cnt = 0;
 FILE *fp_uart;
 FILE *fp_pc; //for rtl debug
 
+void log_tested_print(char *name, struct opcode_group *op, u32 length) {
+    u32 i;
+    log_info_direct("  Tested %s: ", name);
+    for (i = 0; i < length; i++){
+        if (op[i].exec != NULL) {
+            if(op[i].count != 0)
+                log_info_direct("1 ");
+            else
+                log_info_direct("0 ");
+       }
+    }
+    log_info_direct("\n");
+}
+
 void log_tested(){
     u32 i;
     for (i = 0; i < 4; i++)
