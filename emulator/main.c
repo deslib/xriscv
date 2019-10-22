@@ -26,11 +26,16 @@ u32 dead_loop_cnt = 0;
 FILE *fp_uart;
 FILE *fp_pc; //for rtl debug
 
+void invalid_opcode(u32 code) {
+    log_error("Invalid opcode 0x%x\n",code);
+    exit(0);
+}
+
 void log_tested_print(char *name, struct opcode_group *op, u32 length) {
     u32 i;
     log_info_direct("  Tested %s: ", name);
     for (i = 0; i < length; i++){
-        if (op[i].exec != NULL) {
+        if (op[i].exec != invalid_opcode) {
             if(op[i].count != 0)
                 log_info_direct("1 ");
             else

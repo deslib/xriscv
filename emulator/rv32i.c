@@ -148,7 +148,7 @@ void i_sb(u32 code){
 
 void i_sh(u32 code){
     //sh rs2, offset(rs1): M[x[rs1]+sext(offset)=x[rs2][15:0]
-    set_mem((op1_signed+imm_signed), op2_signed, DWORD);
+    set_mem((op1_signed+imm_signed), op2_signed, DHALF);
 }
 
 void i_sw(u32 code){
@@ -432,7 +432,7 @@ void  __attribute__((constructor)) i_opcodes_group_init(){
     opcodes_group[OP_I_CODE].result = i_result;
 
     for (i = 0; i < 32; i++) {
-        i_opcodes_group[i].exec = NULL;
+        i_opcodes_group[i].exec = invalid_opcode;
     }
     i_opcodes_group[OP_I_LUI>>2].exec = i_lui;
     i_opcodes_group[OP_I_AUIPC>>2].exec = i_auipc;
@@ -446,7 +446,7 @@ void  __attribute__((constructor)) i_opcodes_group_init(){
     i_opcodes_group[OP_I_C>>2].exec = i_c;
 
     for (i = 0; i < 8; i++) {
-        i_opcodes_b[i].exec = NULL;
+        i_opcodes_b[i].exec = invalid_opcode;
         i_opcodes_b[i].count = 0;
     }
     i_opcodes_b[0].exec = i_beq;
@@ -457,7 +457,7 @@ void  __attribute__((constructor)) i_opcodes_group_init(){
     i_opcodes_b[7].exec = i_bgeu;
 
     for (i = 0; i < 8; i++) {
-        i_opcodes_l[i].exec = NULL;
+        i_opcodes_l[i].exec = invalid_opcode;
         i_opcodes_l[i].count = 0;
     }
     i_opcodes_l[0].exec = i_lb;
@@ -467,7 +467,7 @@ void  __attribute__((constructor)) i_opcodes_group_init(){
     i_opcodes_l[5].exec = i_lhu;
 
     for (i = 0; i < 8; i++) {
-        i_opcodes_s[i].exec = NULL;
+        i_opcodes_s[i].exec = invalid_opcode;
         i_opcodes_s[i].count = 0;
     }
     i_opcodes_s[0].exec = i_sb;
@@ -475,7 +475,7 @@ void  __attribute__((constructor)) i_opcodes_group_init(){
     i_opcodes_s[2].exec = i_sw;
 
     for (i = 0; i < 8; i++) {
-        i_opcodes_i[i].exec = NULL;
+        i_opcodes_i[i].exec = invalid_opcode;
         i_opcodes_i[i].count = 0;
     }
     i_opcodes_i[0].exec = i_addi;
@@ -488,14 +488,14 @@ void  __attribute__((constructor)) i_opcodes_group_init(){
     i_opcodes_i[5].exec = i_srli_srai;
 
     for (i = 0; i < 128; i++) {
-        i_opcodes_i_1[i].exec = NULL;
+        i_opcodes_i_1[i].exec = invalid_opcode;
         i_opcodes_i_1[i].count = 0;
     }
     i_opcodes_i_1[0].exec = i_srli;
     i_opcodes_i_1[0x20].exec = i_srai;
 
     for (i = 0; i < 8; i++) {
-        i_opcodes_r[i].exec = NULL;
+        i_opcodes_r[i].exec = invalid_opcode;
         i_opcodes_r[i].count = 0;
     }
     i_opcodes_r[0].exec = i_add_sub;
@@ -508,14 +508,14 @@ void  __attribute__((constructor)) i_opcodes_group_init(){
     i_opcodes_r[7].exec = i_and;
 
     for (i = 0; i < 128; i++) {
-        i_opcodes_r_1[i].exec = NULL;
+        i_opcodes_r_1[i].exec = invalid_opcode;
         i_opcodes_r_1[i].count = 0;
     }
     i_opcodes_r_1[0].exec = i_add;
     i_opcodes_r_1[0x20].exec = i_sub;
 
     for (i = 0; i < 128; i++) {
-        i_opcodes_r_2[i].exec = NULL;
+        i_opcodes_r_2[i].exec = invalid_opcode;
         i_opcodes_r_2[i].count = 0;
     }
     i_opcodes_r_2[0].exec = i_srl;
@@ -523,7 +523,7 @@ void  __attribute__((constructor)) i_opcodes_group_init(){
 
 
     for (i = 0; i < 8; i++) {
-        i_opcodes_c[i].exec = NULL;
+        i_opcodes_c[i].exec = invalid_opcode;
         i_opcodes_c[i].count = 0;
     }
     i_opcodes_c[1].exec = i_csrrw;
