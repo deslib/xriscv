@@ -100,7 +100,7 @@ module if_fifo(
         end
     end
 
-    assign full = rd_loop_bit == wr_loop_bit ? (wr_sel == 4) & (rd_sel < 2) : wr_sel + 2 >= rd_sel;
+    assign full = rd_loop_bit == wr_loop_bit ? (wr_sel == 4) & (rd_sel < 2) : wr_sel + 3 >= rd_sel;
     assign empty = rd_loop_bit == wr_loop_bit ? (rd_sel + 1 >= wr_sel) : (rd_sel == 5) & (wr_sel == 0);
 
 endmodule
