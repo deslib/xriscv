@@ -2,12 +2,13 @@
 /*******************************************************************************
 *  Execuate
 * *******************************************************************************/ 
-module ex(
+module xrv_ex(
     input                       clk,
     input                       rstb,
+    //input                       flush,
 
-    output logic                jmp,
-    output logic [31:0]         jmp_addr,
+    output logic                ex_jmp,
+    output logic [31:0]         ex_jmp_addr,
     output                      ls_done,
 
     input                       ex_valid,
@@ -21,6 +22,7 @@ module ex(
     input                       op_store,
     input                       op_imm,
     input                       op_reg,
+    input                       op_is_compressed,
 
     input        [31:0]         imm_signed,
     input        [31:0]         imm_unsigned,
@@ -79,6 +81,8 @@ module ex(
     logic [31:0] dest_reg;
     logic dest_reg_wr_en;
 
+    wire ex_en = ex_valid&~ex_jmp;
+
     always @(*) begin
             dest_reg_wr_en = 0;
             dest_reg = 0;
@@ -105,7 +109,7 @@ module ex(
                                ) : 32'h0;
                 dest_reg_wr_en = 1;
                 `LOG_CORE($sformatf("PC=%05x OP_LOAD %08x from %08x\n", ex_pc, d_rd_data, d_addr));
-            end else if(ex_valid) begin
+            end else if(ex_en) begin
                 if(op_lui) begin
                     dest_reg = imm_signed;
                     dest_reg_wr_en = 1;
@@ -115,7 +119,7 @@ module ex(
                     dest_reg_wr_en = 1;
                     `LOG_CORE($sformatf("PC=%05x AUIPC \n",ex_pc));
                 end else if(op_jal|op_jalr) begin
-                    dest_reg = ex_pc + 4;
+                    dest_reg = ex_pc + (op_is_compressed ? 2 : 4);
                     dest_reg_wr_en = 1;
                     `LOG_CORE($sformatf("PC=%05x OP_JAL|OP_JALR\n",ex_pc));
                 end else if(op_imm|op_reg) begin
@@ -157,8 +161,21 @@ module ex(
                                 ( (funct3 == 3'b110) & operand_ltu ) |
                                 ( (funct3 == 3'b111) & ~operand_ltu ) );
                             
-    assign jmp = ex_valid & (branch|op_jal|op_jalr);
-    assign jmp_addr = (branch | op_jal) ? ex_pc + imm_signed : reg1 + imm_signed;
+    always @(posedge clk or negedge rstb) begin
+        if(~rstb) begin
+            ex_jmp <= 0;
+        end else begin
+            if(ex_en) begin
+                ex_jmp <= branch|op_jalr;
+            end else begin
+                ex_jmp <= 0;
+            end
+        end
+    end
+     
+    always @(posedge clk) begin
+        ex_jmp_addr <= branch ? ex_pc + imm_signed : reg1 + imm_signed;
+    end
 
 /*******************************************************************************
 *  Load/Store 
@@ -169,7 +186,7 @@ module ex(
         end else begin
             if(d_wr_ready) begin
                 d_wr_req <= 0;
-            end else if(ex_valid&op_store)begin
+            end else if(ex_en&op_store)begin
                 d_wr_req <= 1;
             end
         end
@@ -178,7 +195,7 @@ module ex(
     wire [1:0] laddr = operand1[1:0] + imm_signed[1:0];
 
     always @(posedge clk) begin
-        if(op_store&ex_valid) begin
+        if(op_store&ex_en) begin
             d_wr_data <= funct3 == 0 ? 
                             (laddr == 0 ? {24'h0,reg2[7:0]} :
                              laddr == 1 ? {16'h0,reg2[7:0],8'h0} :
@@ -191,7 +208,7 @@ module ex(
     end
 
     always @(posedge clk) begin
-        if((op_store|op_load)&ex_valid) begin
+        if((op_store|op_load)&ex_en) begin
             d_be <=  funct3[1:0] == 0 ? 
                             (laddr == 0 ? 4'h1 : 
                             laddr == 1 ? 4'h2 :
@@ -208,14 +225,14 @@ module ex(
         end else begin
             if(d_rd_ready) begin
                 d_rd_req <= 0;
-            end else if(ex_valid&op_load) begin
+            end else if(ex_en&op_load) begin
                 d_rd_req <= 1;
             end
         end
     end
 
     always @(posedge clk) begin
-        if((op_store|op_load)&ex_valid) begin
+        if((op_store|op_load)&ex_en) begin
             d_addr <= x_reg[src1] + imm_signed;
         end
     end

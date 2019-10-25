@@ -204,11 +204,11 @@ void test_csr(){
 
 void test(){
     xuart_puts("Hello XRISCV!\n");
-    test_imm();
-    test_uiapc();
-    test_load();
-    test_reg();
-    test_csr();
+    //test_imm();
+    //test_uiapc();
+    //test_load();
+    //test_reg();
+    //test_csr();
     regfile.led_btn.led = 0x5;
     test_alu_16();
     test_alu_32();

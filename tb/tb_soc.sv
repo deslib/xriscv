@@ -72,7 +72,7 @@ uart U_UART(
     .rx_valid(uart_rx_valid),
     .rx_data(uart_rx_data)
 );
-
+ 
 logic [15:0] ram_addr;
 always @(posedge clk or negedge rstb) begin
     if(~rstb) begin

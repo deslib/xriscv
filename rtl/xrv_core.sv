@@ -1,5 +1,5 @@
 `include "glb.svh"
-module core(
+module xrv_core(
     input                 clk,
     input                 rstb,
 
@@ -17,7 +17,13 @@ module core(
 );
 
     logic [31:0] ex_pc;
+    logic [31:0] inst;
+    logic [31:0] inst_pc;
     logic ls_done;
+    logic id_jmp;
+    logic [31:0] id_jmp_addr;
+    logic ex_jmp;
+    logic [31:0] ex_jmp_addr;
     logic jmp;
     logic [31:0] jmp_addr;
 
@@ -41,21 +47,47 @@ module core(
     logic [2:0] funct3;
     logic [6:0] funct7;
 
-
-    fd U_FD(
+    xrv_ctrl U_XRV_CTRL(
         .clk(clk),
         .rstb(rstb),
-    
-        .i_data(i_data),
-        .i_addr(i_addr),
-    
-        .ls_done(ls_done),       
+        .is_ls(is_ls),
+        .ls_done(ls_done),
+        .id_jmp(id_jmp),
+        .id_jmp_addr(id_jmp_addr),
+        .ex_jmp(ex_jmp),
+        .ex_jmp_addr(ex_jmp_addr),
+        .stalling(stalling),
+        .flush(flush),
+        .jmp(jmp),
+        .jmp_addr(jmp_addr)
+    );
+
+    xrv_if U_XRV_IF(
+        .clk(clk),
+        .rstb(rstb),
+        .stalling(stalling),
         .jmp(jmp),
         .jmp_addr(jmp_addr),
+        .i_addr(i_addr),
+        .i_data(i_data),
+        .inst(inst),
+        .inst_valid(inst_valid),
+        .inst_is_compressed(inst_is_compressed),
+        .inst_pc(inst_pc)
+    );
+
+    xrv_id U_XRV_ID(
+        .clk(clk),
+        .rstb(rstb),
+        .flush(flush),
     
-        .ex_valid(ex_valid),
-    
-        .ex_pc(ex_pc),
+        .inst(inst),
+        .inst_pc(inst_pc),
+        .inst_is_compressed(inst_is_compressed),
+        .inst_valid(inst_valid),
+        .id_jmp(id_jmp),
+        .id_jmp_addr(id_jmp_addr),
+
         .op_lui(op_lui),              
         .op_auipc(op_auipc),
         .op_jal(op_jal),  
@@ -65,6 +97,7 @@ module core(
         .op_store(op_store),
         .op_imm(op_imm),
         .op_reg(op_reg),
+        .op_is_compressed(op_is_compressed),
     
         .imm_signed(imm_signed),
         .imm_unsigned(imm_unsigned),
@@ -72,15 +105,21 @@ module core(
         .src2(src2),
         .dest(dest),
         .funct3(funct3),
-        .funct7(funct7)
+        .funct7(funct7),
+
+        .is_ls(is_ls),
+        .ex_pc(ex_pc),
+        .ex_valid(ex_valid)
+
     );
 
-    ex U_EX(
+    xrv_ex U_XRV_EX(
         .clk(clk),
         .rstb(rstb),
+        //.flush(flush),
 
-        .jmp(jmp),
-        .jmp_addr(jmp_addr),
+        .ex_jmp(ex_jmp),
+        .ex_jmp_addr(ex_jmp_addr),
         .ls_done(ls_done),
     
         .ex_valid(ex_valid),
@@ -94,6 +133,7 @@ module core(
         .op_store(op_store),
         .op_imm(op_imm),
         .op_reg(op_reg),
+        .op_is_compressed(op_is_compressed),
     
         .imm_signed(imm_signed),
         .imm_unsigned(imm_unsigned),

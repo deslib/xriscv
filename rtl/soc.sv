@@ -109,7 +109,7 @@ d_mux#(
     .io_wr_ready(io_wr_ready)
 );
 
-core U_CORE(
+xrv_core U_XRV_CORE(
     .clk(clk),
     .rstb(rstb&~during_sw_upgrade),
 
@@ -241,6 +241,7 @@ uart_mgr#(
 `else
 assign uart_wr_ready = 1;
 assign uart_ram_wr_en = 0;
+assign during_sw_upgrade = 0;
 `endif
     
 `ifdef SIM
@@ -260,3 +261,4 @@ assign uart_ram_wr_en = 0;
 assign led = ~led_b;
 
 endmodule
+
