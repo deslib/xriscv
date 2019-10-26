@@ -1,7 +1,7 @@
-#ifndef __utils__
+#ifndef __UTILS_H__
+#define __UTILS_H__
 
 char * get_op_str(u8 opcode);
 
-#else
-    #define __utils__
+
 #endif

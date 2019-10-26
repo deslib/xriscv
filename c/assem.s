@@ -1,5 +1,8 @@
-.section text
-.align 2
+.file   "assem.s"
+.option nopic
+.text
+.align  2
+
 .global auipc_test
 .global lb_test
 .global lh_test

@@ -8,7 +8,7 @@
 
 u32 csr[4096];
 
-void csr_init()
+void __attribute__((constructor)) csr_init()
 {
   csr_reg_m_reset(csr);
 }
