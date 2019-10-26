@@ -3,7 +3,7 @@
 //`define SW_UPGRADE
 
 module tb_soc;
-localparam PEIROD = 20;
+localparam PEIROD = 5;
 localparam RAM_SIZE = 16'h4000;
 logic clk;
 logic rstb;

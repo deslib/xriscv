@@ -18,29 +18,26 @@ module if_fifo(
     output logic [31:0] rd_data
 );
 
-    logic [95:0] inst_buf;
+    logic [127:0] inst_buf;
 
-    logic wr_loop_bit;
-    logic rd_loop_bit;
 
-    logic [2:0] wr_sel;
-    logic [3:0] rd_sel;
+    logic [3:0] wr_sel_ext;
+    logic [3:0] rd_sel_ext;
+
+    wire wr_loop_bit = wr_sel_ext[3];
+    wire rd_loop_bit = rd_sel_ext[3];
+    wire [2:0] wr_sel = wr_sel_ext[2:0];
+    wire [2:0] rd_sel = rd_sel_ext[2:0];
+    
 
     always @(posedge clk or negedge rstb) begin
         if(~rstb) begin
-            wr_sel <= 0;
-            wr_loop_bit <= 0;
+            wr_sel_ext <= 0;
         end else begin
             if(jmp) begin
-                wr_sel <= 0;
-                wr_loop_bit <= 0;
+                wr_sel_ext <= 0;
             end else if(wr_en) begin
-                if(wr_sel == 4) begin
-                    wr_sel <= 0;
-                    wr_loop_bit <= ~wr_loop_bit;
-                end else begin
-                    wr_sel <= wr_sel + 2;
-                end
+                wr_sel_ext <= wr_sel_ext + 2;
             end
         end
     end
@@ -54,8 +51,10 @@ module if_fifo(
                     inst_buf[31:0] <= wr_data;
                 end else if(wr_sel == 2) begin
                     inst_buf[63:32] <= wr_data;
-                end else begin
+                end else if(wr_sel == 4) begin
                     inst_buf[95:64] <= wr_data;
+                end else begin
+                    inst_buf[127:96] <= wr_data;
                 end
             end
         end
@@ -66,42 +65,29 @@ module if_fifo(
                      rd_sel == 2 ? inst_buf[63:32] :
                      rd_sel == 3 ? inst_buf[79:48] : 
                      rd_sel == 4 ? inst_buf[95:64] : 
-                                   {inst_buf[15:0],inst_buf[95:80]} ;
+                     rd_sel == 5 ? inst_buf[111:80] : 
+                     rd_sel == 6 ? inst_buf[127:96] : 
+                                   {inst_buf[15:0],inst_buf[127:112]} ;
     wire is_compress_inst = ~&rd_data[1:0];
 
     always @(posedge clk or negedge rstb) begin
         if(~rstb) begin
-            rd_sel <= 0;
-            rd_loop_bit <= 0;
+            rd_sel_ext <= 0;
         end else begin
             if(jmp) begin
-                rd_sel <= jmp_addr_bit1;
-                rd_loop_bit <= 0;
+                rd_sel_ext <= {3'h0,jmp_addr_bit1};
             end else if(rd_en) begin
                 if(is_compress_inst) begin
-                    if(rd_sel == 5) begin
-                        rd_sel <= 0;
-                        rd_loop_bit <= ~rd_loop_bit;
-                    end else begin
-                        rd_sel <= rd_sel + 1;
-                    end
+                    rd_sel_ext <= rd_sel_ext + 1;
                 end else begin
-                    if(rd_sel == 4) begin
-                        rd_sel <= 0;
-                        rd_loop_bit <= ~rd_loop_bit;
-                    end else if(rd_sel == 5) begin
-                        rd_sel <= 1;
-                        rd_loop_bit <= ~rd_loop_bit;
-                    end else begin
-                        rd_sel <= rd_sel + 2;
-                    end
+                    rd_sel_ext <= rd_sel_ext + 2;
                 end
             end
         end
     end
 
-    assign full = rd_loop_bit == wr_loop_bit ? (wr_sel == 4) & (rd_sel < 2) : wr_sel + 3 >= rd_sel;
-    assign empty = rd_loop_bit == wr_loop_bit ? (rd_sel + 1 >= wr_sel) : (rd_sel == 5) & (wr_sel == 0);
+    assign full = rd_loop_bit == wr_loop_bit ? (wr_sel == 6) & (rd_sel < 2) : wr_sel + 3 >= rd_sel;
+    assign empty = rd_loop_bit == wr_loop_bit ? (rd_sel + 1 >= wr_sel) : (rd_sel == 7) & (wr_sel == 0);
 
 endmodule
 
