@@ -1,5 +1,5 @@
 /*******************************************************************************
-* fetcher & decoder
+* instruction decoder
 ********************************************************************************/ 
 `include "glb.svh"
 module xrv_id(
@@ -11,7 +11,7 @@ module xrv_id(
     input        [31:0]         inst_pc,
     input                       inst_is_compressed,
     input                       inst_valid,
-    output                      is_ls,
+    output logic                is_ls,
     output logic                id_jmp,
     output logic [31:0]         id_jmp_addr,
 
@@ -53,7 +53,17 @@ module xrv_id(
     wire is_op_imm    = (opcode == `OP_IMM)   ;
     wire is_op_reg    = (opcode == `OP_REG)   ;
 
-    assign is_ls = (is_op_load | is_op_store) & inst_valid;
+    always @(posedge clk or negedge rstb) begin
+        if(~rstb) begin
+            is_ls <= 0;
+        end else begin
+            if(inst_valid) begin
+                is_ls <= (is_op_load | is_op_store);
+            end else begin
+                is_ls <= 0;
+            end
+        end
+    end
     wire  decode_en = inst_valid;
 
 

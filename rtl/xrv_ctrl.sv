@@ -28,7 +28,7 @@ module xrv_ctrl(
         end
     end
 
-    assign stalling = is_ls | (during_ls & ~ls_done);
+    assign stalling = (is_ls | during_ls) & ~ls_done;
 
     //always @(posedge clk or negedge rstb) begin
     //    if(~rstb) begin

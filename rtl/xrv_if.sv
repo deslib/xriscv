@@ -1,3 +1,6 @@
+/*******************************************************************************
+*   instruction fetcher 
+********************************************************************************/ 
 module xrv_if(
     input               clk,
     input               rstb,
@@ -26,7 +29,7 @@ module xrv_if(
         if(~rstb) begin
             i_data_req <= 0;
         end else begin
-            if(~jmp) begin
+            if(jmp) begin
                 i_data_req <= 1;
             end else if(~i_data_full) begin
                 i_data_req <= 1;
@@ -71,17 +74,7 @@ module xrv_if(
 /*******************************************************************************
 *   Fetch i_data from fifo and do inst decompress
 ********************************************************************************/ 
-    always @(posedge clk or negedge rstb) begin
-        if(~rstb) begin
-            i_data_rd_en <= 0;
-        end else begin
-            if(~i_data_empty&~stalling&~jmp) begin
-                i_data_rd_en <= 1;
-            end else begin
-                i_data_rd_en <= 0;
-            end
-        end
-    end
+    assign i_data_rd_en = ~i_data_empty & ~stalling & ~jmp;
      
     xrv_i_decompress U_XRV_I_DECOMPRESS(
         .data_in(i_data_align),
@@ -145,23 +138,7 @@ module xrv_if(
         end
     end
      
-    assign inst_valid = i_data_rd_en&~jmp;
-    //always @(posedge clk or negedge rstb) begin
-    //    if(~rstb) begin
-    //        inst_valid <= 0;
-    //    end else begin
-    //        if(inst_en) begin
-    //            if(~stalling) begin
-    //                inst_valid <= (~flush & ~during_jmp) | jmp_settle;
-    //            end else begin
-    //                inst_valid <= 0;
-    //            end
-    //        end else begin
-    //            inst_valid <= 0;
-    //        end
-    //    end
-    //end
-     
+    assign inst_valid = i_data_rd_en;
     assign inst_pc = pc;
 
 endmodule
