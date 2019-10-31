@@ -403,6 +403,7 @@ void i_c(u32 code){
 }
 
 void i_exec(u32 code){
+    //log_info("i_exec, pc[0x%x] = 0x%x\n", pc, code);
     subcode1 = get_bits(code, 2, 5);
     subcode2 = get_bits(code, 12, 3);
     i_opcodes_group[subcode1].exec(code);
@@ -412,7 +413,7 @@ void i_exec(u32 code){
 }
 
 void i_result(){
-    log_deep_debug_direct("RV32I result: \n");
+    log_info_direct("RV32I result: \n");
     log_tested_print("Opcode", i_opcodes_group, 32);
     log_tested_print("Branch", i_opcodes_b, 8);
     log_tested_print("Load  ", i_opcodes_l, 8);

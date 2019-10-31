@@ -11,6 +11,9 @@ u32 rs2;
 u32 uimm;
 i32 imm;
 u32 off;
+u32 subcode1;
+u32 subcode2;
+u32 subcode3;
 
 struct opcode_group c_opcodes_00[8];
 struct opcode_group c_opcodes_01[8];
@@ -345,11 +348,15 @@ void c_swsp(u32 code){
 }
 
 void c_sub_xor_or_and(u32 code){
-  c_opcodes_01_sub2[0].exec(code);
+  subcode3 = get_bits(code, 5, 2);
+  c_opcodes_01_sub2[subcode3].exec(code);
+  c_opcodes_01_sub2[subcode3].count++;
 }
 
 void c_srli_srai_andi_sub_xor_or_and(u32 code){
-  c_opcodes_01_sub1[0].exec(code);
+  subcode2 = get_bits(code, 10, 2);
+  c_opcodes_01_sub1[subcode2].exec(code);
+  c_opcodes_01_sub1[subcode2].count++;
 }
 
 void c_jr_mv_ebreak_jalr_add(u32 code){
@@ -357,24 +364,40 @@ void c_jr_mv_ebreak_jalr_add(u32 code){
 }
 
 void c_exec_00(u32 code){
-    c_opcodes_00[get_bits(code, 13, 3)].exec(code);
+    //log_info("c_exec_00, pc[0x%x] = 0x%x\n", pc, code&0xffff);
+    subcode1 = get_bits(code, 13, 3);
+    c_opcodes_00[get_bits(code, 13, 3)].exec(code&0xffff);
+    c_opcodes_00[subcode1].count++;
     xreg[0] = 0;// some instruction will set reg[0]. But it is hard wired as 0 in hardware;
     tick += 1;
 }
 
 void c_exec_01(u32 code){
-    c_opcodes_01[get_bits(code, 13, 3)].exec(code);
+    //log_info("c_exec_01, pc[0x%x] = 0x%x\n", pc, code&0xffff);
+    subcode1 = get_bits(code, 13, 3);
+    c_opcodes_01[get_bits(code, 13, 3)].exec(code&0xffff);
+    c_opcodes_01[subcode1].count++;
     xreg[0] = 0;// some instruction will set reg[0]. But it is hard wired as 0 in hardware;
     tick += 1;
 }
 
 void c_exec_10(u32 code){
-    c_opcodes_10[get_bits(code, 13, 3)].exec(code);
+    //log_info("c_exec_10, pc[0x%x] = 0x%x\n", pc, code&0xffff);
+    subcode1 = get_bits(code, 13, 3);
+    c_opcodes_10[subcode1].exec(code&0xffff);
+    c_opcodes_10[subcode1].count++;
     xreg[0] = 0;// some instruction will set reg[0]. But it is hard wired as 0 in hardware;
     tick += 1;
 }
 
 void c_result(){
+    log_info_direct("RV32C result: \n");
+    log_tested_print("OP_C_00", c_opcodes_00, 8);
+    log_tested_print("OP_C_01", c_opcodes_01, 8);
+    log_tested_print("OP_C_10", c_opcodes_10, 8);
+    log_tested_print("OP_C_01 sub1 ", c_opcodes_01_sub1, 4);
+    log_tested_print("OP_C_01 sub2 ", c_opcodes_01_sub2, 4);
+    log_tested_print("OP_C_01 sub1 ", c_opcodes_10_sub1, 2);
 }
 
 void  __attribute__((constructor)) c_opcodes_group_init(){
@@ -383,9 +406,9 @@ void  __attribute__((constructor)) c_opcodes_group_init(){
     opcodes_group[OP_C_00].exec = c_exec_00;
     opcodes_group[OP_C_00].result = c_result;
     opcodes_group[OP_C_01].exec = c_exec_01;
-    opcodes_group[OP_C_01].result = c_result;
+    opcodes_group[OP_C_01].result = NULL;
     opcodes_group[OP_C_10].exec = c_exec_10;
-    opcodes_group[OP_C_10].result = c_result;
+    opcodes_group[OP_C_10].result = NULL;
 
     for (i = 0; i < 8; i++) {
         c_opcodes_00[i].exec = invalid_opcode;
