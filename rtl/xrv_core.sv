@@ -56,6 +56,7 @@ module xrv_core(
         .id_jmp_addr(id_jmp_addr),
         .ex_jmp(ex_jmp),
         .ex_jmp_addr(ex_jmp_addr),
+        .ncycle_alu_wait(ncycle_alu_wait),
         .stalling(stalling),
         .flush(flush),
         .jmp(jmp),
@@ -120,6 +121,7 @@ module xrv_core(
 
         .ex_jmp(ex_jmp),
         .ex_jmp_addr(ex_jmp_addr),
+        .ncycle_alu_wait(ncycle_alu_wait),
         .ls_done(ls_done),
     
         .ex_valid(ex_valid),

@@ -8,6 +8,7 @@ module xrv_ctrl(
     input        [31:0] id_jmp_addr,
     input               ex_jmp,
     input        [31:0] ex_jmp_addr,
+    input               ncycle_alu_wait,
 
     output logic        stalling,
     output logic        flush,
@@ -28,7 +29,7 @@ module xrv_ctrl(
         end
     end
 
-    assign stalling = (is_ls | during_ls) & ~ls_done;
+    assign stalling = (is_ls | ncycle_alu_wait | during_ls) & ~ls_done;
 
     //always @(posedge clk or negedge rstb) begin
     //    if(~rstb) begin
