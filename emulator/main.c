@@ -178,6 +178,21 @@ void print_reg_to_file(FILE *f){
     }
 }
 
+u32 get_code(){
+    u32  mod = (pc & 3);
+    u32 code1 = get_mem(pc);
+    u32 code2;
+
+    if (mod == 0)
+        return code1;
+
+    code1 >>= (32-mod*8);
+    code2 = get_mem((pc/3)*3 + 4);
+    code2 &= ((1<<(mod*8))-1);
+
+    return code1 + (code2<<(mod*8));
+}
+
 void main(){
     u32 rom_length;
     u32 code;
@@ -188,7 +203,7 @@ void main(){
     read2rxm("../c/xriscv.ram",TO_RAM);
     while(1){
         fprintf(fp_pc,"%x ",pc);
-        code = get_mem(pc);
+        code = get_code();
         opcodes_group[code&3].exec(code);
 
         log_debug_direct("XREG\n");
