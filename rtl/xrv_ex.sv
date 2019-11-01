@@ -87,21 +87,23 @@ module xrv_ex(
 
     wire ex_en = ex_valid&~ex_jmp;
 
-    wire [31:0] operand_rs =(funct7[5] ? operand1 >>> operand2[4:0] : operand1 >> operand2[4:0]);
     logic [31:0] dest_reg_op_imm_or_op_reg;
     logic [31:0] dest_reg_op_load;
     logic [31:0] operand1_minus_operand2;
     logic [31:0] operand1_plus_operand2;
     logic        operand1_lt_operand2;
     logic        operand1_lt_operand2_u;
+    logic [31:0] operand_ls;
+    logic [31:0] operand_rs;
     always @(posedge clk) begin
         operand1_minus_operand2 <= operand1 - operand2;
         operand1_plus_operand2  <= operand1 + operand2;
         operand1_lt_operand2_u <= $unsigned(operand1) < $unsigned(operand2);
         operand1_lt_operand2   <= $signed(operand1) < $signed(operand2);
-        dest_reg_op_imm_or_op_reg <= funct3 == 3'b001 ? operand1 << operand2[4:0] :
+        operand_rs <= (funct7[5] ? operand1 >>> operand2[4:0] : operand1 >> operand2[4:0]);
+        operand_ls <= operand1 << operand2[4:0];
+        dest_reg_op_imm_or_op_reg <= 
                                      funct3 == 3'b100 ? operand1 ^ operand2 :
-                                     funct3 == 3'b101 ? operand_rs :
                                      funct3 == 3'b110 ? operand1 | operand2 :
                                                         operand1 & operand2;
         dest_reg_op_load <= funct3 == 3'b000 ? (
@@ -166,6 +168,8 @@ module xrv_ex(
             end else if(ncycle_alu_cmp) begin
                 if(op_imm|op_reg) begin
                     dest_reg = funct3 == 3'b000 ? ( (funct7[5]&op_reg) ? operand1_minus_operand2 : operand1_plus_operand2) :
+                               funct3 == 3'b001 ? operand_ls :
+                               funct3 == 3'b101 ? operand_rs :
                                funct3 == 3'b010 ? {31'h0,operand1_lt_operand2} :
                                funct3 == 3'b011 ? {31'h0,operand1_lt_operand2_u} : dest_reg_op_imm_or_op_reg;
                     dest_reg_wr_en = 1;
@@ -208,9 +212,15 @@ module xrv_ex(
         end
     end
      
+    logic signed [31:0] branch_addr;
+    logic signed [31:0] jalr_addr;
+    logic        branch_reg;
     always @(posedge clk) begin
-        ex_jmp_addr <= branch ? ex_pc + imm_signed : reg1 + imm_signed;
+        branch_addr <= ex_pc + imm_signed;
+        jalr_addr <= reg1 + imm_signed;
+        branch_reg <= branch;
     end
+    assign ex_jmp_addr = branch_reg ? branch_addr : jalr_addr;
 
 /*******************************************************************************
 *  Load/Store 
