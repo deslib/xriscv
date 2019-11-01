@@ -90,11 +90,16 @@ module xrv_ex(
     wire [31:0] operand_rs =(funct7[5] ? operand1 >>> operand2[4:0] : operand1 >> operand2[4:0]);
     logic [31:0] dest_reg_op_imm_or_op_reg;
     logic [31:0] dest_reg_op_load;
+    logic [31:0] operand1_minus_operand2;
+    logic [31:0] operand1_plus_operand2;
+    logic        operand1_lt_operand2;
+    logic        operand1_lt_operand2_u;
     always @(posedge clk) begin
-        dest_reg_op_imm_or_op_reg <= funct3 == 3'b000 ? ( (funct7[5]&op_reg) ? operand1 - operand2 : operand1 + operand2) :
-                                     funct3 == 3'b001 ? operand1 << operand2[4:0] :
-                                     funct3 == 3'b010 ? (operand1 < operand2 ? 32'h1 : 32'h0) :
-                                     funct3 == 3'b011 ? ( ($unsigned(operand1) < $unsigned(operand2)) ? 32'h1 : 32'h0) :
+        operand1_minus_operand2 <= operand1 - operand2;
+        operand1_plus_operand2  <= operand1 + operand2;
+        operand1_lt_operand2_u <= $unsigned(operand1) < $unsigned(operand2);
+        operand1_lt_operand2   <= $signed(operand1) < $signed(operand2);
+        dest_reg_op_imm_or_op_reg <= funct3 == 3'b001 ? operand1 << operand2[4:0] :
                                      funct3 == 3'b100 ? operand1 ^ operand2 :
                                      funct3 == 3'b101 ? operand_rs :
                                      funct3 == 3'b110 ? operand1 | operand2 :
@@ -160,7 +165,9 @@ module xrv_ex(
                 end
             end else if(ncycle_alu_cmp) begin
                 if(op_imm|op_reg) begin
-                    dest_reg = dest_reg_op_imm_or_op_reg;
+                    dest_reg = funct3 == 3'b000 ? ( (funct7[5]&op_reg) ? operand1_minus_operand2 : operand1_plus_operand2) :
+                               funct3 == 3'b010 ? {31'h0,operand1_lt_operand2} :
+                               funct3 == 3'b011 ? {31'h0,operand1_lt_operand2_u} : dest_reg_op_imm_or_op_reg;
                     dest_reg_wr_en = 1;
                 end
             end
@@ -178,11 +185,9 @@ module xrv_ex(
 * JMP
 ********************************************************************************/ 
     logic operand_eq;
-    logic operand_lt;
-    logic operand_ltu;
+    wire operand_lt  = $signed(reg1) < $signed(reg2);
+    wire operand_ltu = $unsigned(reg1) < $unsigned(reg2);
     assign operand_eq  = reg1 == reg2;
-    assign operand_lt  = $signed(reg1) < $signed(reg2);
-    assign operand_ltu = $unsigned(reg1) < $unsigned(reg2);
 
     wire branch = op_branch & ( ( (funct3 == 3'b000) & operand_eq) |
                                 ( (funct3 == 3'b001) & ~operand_eq) |
