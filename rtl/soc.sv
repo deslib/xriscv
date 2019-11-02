@@ -4,7 +4,7 @@ module soc#(
     parameter ADDR_LEN = 16,
     parameter RAM_ADDR_LEN = ADDR_LEN-2
 )(
-    input clk,
+    input clk_in,
     input rstb_in,
     input sw_uart_upgrade_b, //software upgrade
     input uart_rx,
@@ -62,19 +62,24 @@ wire                        uart_txfifo_full;
 wire                        uart_rxfifo_empty;
 
 /**************************************************************************************************
+*     Reset & clock
+**************************************************************************************************/
+
+//`ifdef SIM
+assign rstb = rstb_in;
+assign clk = clk_in;
+//`else
+//clk_wiz_0 U_PLL(
+//    .clk_in(clk_in),
+//    .resetn(rstb_in),
+//    .clk(clk),
+//    .locked(rstb)
+//);
+//`endif
+
+/**************************************************************************************************
 *     Reset 
 **************************************************************************************************/
-logic [1:0] rstb_in_pipe;
-always @(posedge clk or negedge rstb_in) begin
-    if(~rstb_in) begin
-        rstb_in_pipe <= 0;
-    end else begin
-        rstb_in_pipe[0] <= 1;
-        rstb_in_pipe[1] <= rstb_in_pipe[0];
-    end
-end
-wire rstb = rstb_in_pipe[1];
-
 d_mux#(
     .XLEN(32),
     .ADDR_LEN(ADDR_LEN)

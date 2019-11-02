@@ -71,6 +71,7 @@ module xrv_core(
         .jmp_addr(jmp_addr),
         .i_addr(i_addr),
         .i_data(i_data),
+        .is_ls(is_ls),
         .inst(inst),
         .inst_valid(inst_valid),
         .inst_is_compressed(inst_is_compressed),
@@ -108,7 +109,6 @@ module xrv_core(
         .funct3(funct3),
         .funct7(funct7),
 
-        .is_ls(is_ls),
         .ex_pc(ex_pc),
         .ex_valid(ex_valid)
 

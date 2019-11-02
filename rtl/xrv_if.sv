@@ -12,6 +12,7 @@ module xrv_if(
     input        [31:0] i_data,
     output logic [31:0] i_addr,
 
+    output logic        is_ls,
     output logic [31:0] inst,
     output logic [31:0] inst_pc,
     output logic        inst_is_compressed,
@@ -74,11 +75,12 @@ module xrv_if(
 /*******************************************************************************
 *   Fetch i_data from fifo and do inst decompress
 ********************************************************************************/ 
+    logic [31:0] inst_decompress;
     assign i_data_rd_en = ~i_data_empty & ~stalling & ~jmp;
      
     xrv_i_decompress U_XRV_I_DECOMPRESS(
         .data_in(i_data_align),
-        .data_out(inst)
+        .data_out(inst_decompress)
     );
      
 /*******************************************************************************
@@ -87,7 +89,7 @@ module xrv_if(
     logic [31:0] pc;
     logic during_jmp;
     logic [2:0] jmp_dly;
-    assign inst_is_compressed = ~&i_data_align[1:0];
+    wire inst_is_compressed_pre = ~&i_data_align[1:0];
     always @(posedge clk or negedge rstb) begin
         if(~rstb) begin
             jmp_dly <= 0;
@@ -114,8 +116,23 @@ module xrv_if(
         end else begin
             if(jmp) begin
                 pc <= jmp_addr;
-            end else if(inst_valid) begin
-                pc <= pc + (inst_is_compressed ? 32'h2 : 32'h4);
+            end else if(i_data_rd_en) begin
+                pc <= pc + (inst_is_compressed_pre ? 32'h2 : 32'h4);
+            end
+        end
+    end
+
+/*******************************************************************************
+*   load & store
+********************************************************************************/ 
+    always @(posedge clk or negedge rstb) begin
+        if(~rstb) begin
+            is_ls <= 0;
+        end else begin
+            if(i_data_rd_en) begin
+                is_ls <= ~((|inst_decompress[4:2])|inst_decompress[6]);
+            end else begin
+                is_ls <= 0;
             end
         end
     end
@@ -138,7 +155,23 @@ module xrv_if(
         end
     end
      
-    assign inst_valid = i_data_rd_en;
-    assign inst_pc = pc;
+    //assign inst_valid = i_data_rd_en;
+    //assign inst_pc = pc;
+    //assign inst = inst_decompress;
+    //assign inst_is_compressed = inst_is_compressed_pre;
+
+    always @(posedge clk or negedge rstb) begin
+        if(~rstb) begin
+            inst_valid <= 0;
+        end else begin
+            inst_valid <= i_data_rd_en;
+        end
+    end 
+
+    always @(posedge clk) begin
+        inst <= inst_decompress;
+        inst_pc <= pc;
+        inst_is_compressed <= inst_is_compressed_pre;
+    end 
 
 endmodule

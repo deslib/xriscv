@@ -2,7 +2,7 @@
 *.pyc
 *.exe
 c
-sim
+sim*
 !sim/*.f
 !sim/*.sh
 !sim/*.do

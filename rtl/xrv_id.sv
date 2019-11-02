@@ -11,7 +11,6 @@ module xrv_id(
     input        [31:0]         inst_pc,
     input                       inst_is_compressed,
     input                       inst_valid,
-    output logic                is_ls,
     output logic                id_jmp,
     output logic [31:0]         id_jmp_addr,
 
@@ -53,17 +52,6 @@ module xrv_id(
     wire is_op_imm    = (opcode == `OP_IMM)   ;
     wire is_op_reg    = (opcode == `OP_REG)   ;
 
-    always @(posedge clk or negedge rstb) begin
-        if(~rstb) begin
-            is_ls <= 0;
-        end else begin
-            if(inst_valid) begin
-                is_ls <= (is_op_load | is_op_store);
-            end else begin
-                is_ls <= 0;
-            end
-        end
-    end
     wire  decode_en = inst_valid;
 
 
@@ -88,19 +76,37 @@ module xrv_id(
     /****************************************************************************
     *       operand decoder
     ****************************************************************************/
+    wire is_op_lui_auipc = is_op_lui | is_op_auipc; //for bit[31:21] and bit[10:5]
+    wire is_op_lui_auipc_jal = is_op_lui_auipc | is_op_jal; //for bit [19:13]
+    wire is_op_lui_auipc_jal_branch = is_op_lui_auipc_jal | is_op_branch; //for bit [19:13]
+    wire is_branch_store = is_op_branch | is_op_store; //for bit[4:1]
+    wire is_op_jalr_load_imm = is_op_jalr | is_op_load | is_op_imm; //for bit[0]
+    wire [31:0] bits_signed;
+
+    assign bits_signed[31:20] = is_op_lui_auipc ? inst[31:20] : {12{inst[31]}};
+    assign bits_signed[19:12] = is_op_lui_auipc_jal ? inst[19:12] : {8{inst[31]}};
+    assign bits_signed[11]    = is_op_lui_auipc ? 1'b0 : is_op_jal ? inst[20] : is_op_branch ? inst[7] : inst[31];
+    assign bits_signed[10:5]  = is_op_lui_auipc ? ALL0[11:5] : inst[30:25]; 
+    assign bits_signed[4:1]   = is_op_lui_auipc ? ALL0[4:1] : is_branch_store ? inst[11:8] : inst[24:21];
+    assign bits_signed[0]     = is_op_lui_auipc_jal_branch ? 1'b0 : is_op_store ? inst[7] : inst[20];
+
     always @(posedge clk) begin
         if(decode_en) begin 
-            imm_signed   <= (is_op_lui | is_op_auipc)         ? {inst[31:12],ALL0[11:0]} :
-                            (is_op_jal)                       ? {inst[31] ? ALL1[31:21]:ALL0[31:21], inst[31],inst[19:12],inst[20],inst[30:21],1'b0} :
-                            (is_op_jalr|is_op_imm|is_op_load) ? {inst[31] ? ALL1[31:12]:ALL0[31:12], inst[31:20]} :
-                            (is_op_branch)                    ? {inst[31] ? ALL1[31:13]:ALL0[31:13], inst[31],inst[7],inst[30:25],inst[11:8],1'b0} :
-                            (is_op_store)                     ? {inst[31] ? ALL1[31:12]:ALL0[31:12], inst[31:25], inst[11:7]} : 32'h0;
-
-            imm_unsigned <= (is_op_lui | is_op_auipc)         ? {inst[31:12],ALL0[11:0]} :
-                            (is_op_jal)                       ? {ALL0[31:21], inst[31],inst[19:12],inst[20],inst[30:21],1'b0} :
-                            (is_op_jalr|is_op_imm|is_op_load) ? {ALL0[31:12], inst[31:20]} :
-                            (is_op_branch)                    ? {ALL0[31:13], inst[31],inst[7],inst[30:25],inst[11:8],1'b0} :
-                            (is_op_store)                     ? {ALL0[31:12], inst[31:25], inst[11:7]} : 32'h0;
+            imm_signed              <= bits_signed;
+            //imm_signed_dbg          <= (is_op_lui | is_op_auipc)         ? {inst[31:12],ALL0[11:0]} :
+            //                           (is_op_jal)                       ? {inst[31] ? ALL1[31:21]:ALL0[31:21], inst[31],inst[19:12],inst[20],inst[30:21],1'b0} :
+            //                           (is_op_jalr|is_op_imm|is_op_load) ? {inst[31] ? ALL1[31:12]:ALL0[31:12], inst[31:20]} :
+            //                           (is_op_branch)                    ? {inst[31] ? ALL1[31:13]:ALL0[31:13], inst[31],inst[7],inst[30:25],inst[11:8],1'b0} :
+            //                           (is_op_store)                     ? {inst[31] ? ALL1[31:12]:ALL0[31:12], inst[31:25], inst[11:7]} : 32'h0;
+            imm_unsigned[31:21]     <= is_op_lui_auipc ? inst[31:21] : ALL0[31:21];      
+            imm_unsigned[20]        <= is_op_lui_auipc ? inst[20] : is_op_jal ? inst[31] : 1'b0;
+            imm_unsigned[19:12]     <= is_op_lui_auipc_jal ? inst[19:12] : ALL0[19:12];
+            imm_unsigned[11:0]      <= bits_signed[11:0];
+            //imm_unsigned_dbg        <= (is_op_lui | is_op_auipc)         ? {inst[31:12],ALL0[11:0]} :
+            //                           (is_op_jal)                       ? {ALL0[31:21], inst[31],inst[19:12],inst[20],inst[30:21],1'b0} :
+            //                           (is_op_jalr|is_op_imm|is_op_load) ? {ALL0[31:12], inst[31:20]} :
+            //                           (is_op_branch)                    ? {ALL0[31:13], inst[31],inst[7],inst[30:25],inst[11:8],1'b0} :
+            //                           (is_op_store)                     ? {ALL0[31:12], inst[31:25], inst[11:7]} : 32'h0;
 
             src1 <= inst[19:15];
             src2 <= inst[24:20];
@@ -144,7 +150,5 @@ always @(posedge clk) begin
         id_jmp_addr <= inst_pc + $signed({inst[31] ? ALL1[31:21]:ALL0[31:21], inst[31],inst[19:12],inst[20],inst[30:21],1'b0});
     end
 end
- 
-
      
 endmodule

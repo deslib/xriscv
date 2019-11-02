@@ -52,7 +52,7 @@ end
 soc#(
     .XLEN(32)
 )U_SOC(
-    .clk(clk),
+    .clk_in(clk),
     .rstb_in(rstb),
     .sw_uart_upgrade_b(sw_uart_upgrade_b),
     .uart_rx(uart_tx),

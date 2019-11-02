@@ -18,6 +18,7 @@
 ../rtl/xrv_core.sv
 ../rtl/d_mux.sv
 ../rtl/misc/fifo.sv
+../rtl/misc/pll.sv
 ../rtl/uart_sw_upgrader.sv
 ../rtl/uart_mgr.sv
 ../rtl/soc.sv
