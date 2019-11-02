@@ -21,6 +21,7 @@ struct opcode_group c_opcodes_10[8];
 struct opcode_group c_opcodes_01_sub1[4];
 struct opcode_group c_opcodes_01_sub2[4];
 struct opcode_group c_opcodes_10_sub1[2];
+struct opcode_group c_opcodes_10_sub2[2];
 
 //x[8+rd’] = x[2] + uimm
 void c_addi4spn(u32 code){
@@ -253,7 +254,8 @@ void c_slli(u32 code){
 
 //x[rd] = sext(M[x[2] + uimm][31:0])
 void c_lwsp(u32 code){
-    uimm = (get_bits(code, 2, 5) | \
+    uimm = ((get_bits(code, 2, 2) << 6) | \
+           (get_bits(code, 4, 3) << 2) | \
            (get_bits(code, 12, 1) << 5));
     rd = get_bits(code, 7, 5);
     xreg[rd] = (i32)get_mem(xreg[2]+uimm);
@@ -276,66 +278,68 @@ void c_mv(u32 code){
 
 //RaiseException(Breakpoint)
 void c_ebreak(u32 code){
-  //TODO
+    //TODO
     pc += 2;  
 }
 
 //t = pc+2; pc = x[rs1]; x[1] = t
 void c_jalr(u32 code){
-  u32 t;
+    u32 t;
     rs1 = get_bits(code, 7, 5);
-  t = (pc + 2);
-  pc = xreg[rs1];
-  xreg[1] = t;
-  pc += 2;
+    t = (pc + 2);
+    pc = xreg[rs1];
+    xreg[1] = t;
+    pc += 2;
 }
 
 //x[rd] = x[rd] + x[rs2]
 void c_add(u32 code){
     rd = get_bits(code, 7, 5);
     rs2 = get_bits(code, 2, 5);
-  xreg[rd] = (xreg[rd] + xreg[rs2]);
-  pc += 2;
+    xreg[rd] = (xreg[rd] + xreg[rs2]);
+    pc += 2;
 }
 
 void c_jr_mv(u32 code){
-  u32 i, j;
-  i = get_bits(code, 2, 5);
-  j = get_bits(code, 7, 5);
-  if ((i == 0) && (j != 0)) {
-    //c.jr
-    c_jr(code);
-  }
-  else if ((i != 0) && (j != 0)) {
-    //c.mv
-    c_mv(code);
-  }
-  else {
-    //invalid
-    invalid_opcode(code);
-  }
+    u32 i, j;
+    i = get_bits(code, 2, 5);
+    j = get_bits(code, 7, 5);
+    if ((i == 0) && (j != 0)) {
+        //c.jr
+        c_opcodes_10_sub2[0].exec(code&0xffff);
+        c_opcodes_10_sub2[0].count++;
+    }
+    else if ((i != 0) && (j != 0)) {
+        //c.mv
+        c_opcodes_10_sub2[1].exec(code&0xffff);
+        c_opcodes_10_sub2[1].count++;
+    }
+    else {
+        //invalid
+        invalid_opcode(code);
+    }
 }
 
 void c_ebreak_jalr_add(u32 code){
-  u32 i, j;
-  i = get_bits(code, 2, 5);
-  j = get_bits(code, 7, 5);
-  if ((i == 0) && (j == 0)) {
-    //c.ebreak
-    c_ebreak(code);
-  }
-  else if ((i == 0) && (j != 0)) {
-    //c.jalr
-    c_jalr(code);
-  }
-  else if ((i != 0) && (j != 0)) {
-    //c.add
-    c_add(code);
-  }
-  else {
-    //invalid
-    invalid_opcode(code);    
-  }
+    u32 i, j;
+    i = get_bits(code, 2, 5);
+    j = get_bits(code, 7, 5);
+    if ((i == 0) && (j == 0)) {
+        //c.ebreak
+        c_ebreak(code);
+    }
+    else if ((i == 0) && (j != 0)) {
+        //c.jalr
+        c_jalr(code);
+    }
+    else if ((i != 0) && (j != 0)) {
+        //c.add
+        c_add(code);
+    }
+    else {
+        //invalid
+        invalid_opcode(code);    
+    }
 }
 
 //M[x[2] + uimm][31:0] = x[rs2]
@@ -348,19 +352,21 @@ void c_swsp(u32 code){
 }
 
 void c_sub_xor_or_and(u32 code){
-  subcode3 = get_bits(code, 5, 2);
-  c_opcodes_01_sub2[subcode3].exec(code);
-  c_opcodes_01_sub2[subcode3].count++;
+    subcode3 = get_bits(code, 5, 2);
+    c_opcodes_01_sub2[subcode3].exec(code);
+    c_opcodes_01_sub2[subcode3].count++;
 }
 
 void c_srli_srai_andi_sub_xor_or_and(u32 code){
-  subcode2 = get_bits(code, 10, 2);
-  c_opcodes_01_sub1[subcode2].exec(code);
-  c_opcodes_01_sub1[subcode2].count++;
+    subcode2 = get_bits(code, 10, 2);
+    c_opcodes_01_sub1[subcode2].exec(code);
+    c_opcodes_01_sub1[subcode2].count++;
 }
 
 void c_jr_mv_ebreak_jalr_add(u32 code){
-  c_opcodes_10_sub1[get_bits(code, 12, 1)].exec(code);
+    subcode2 = get_bits(code, 12, 1);
+    c_opcodes_10_sub1[subcode2].exec(code);
+    c_opcodes_10_sub1[subcode2].count++;
 }
 
 void c_exec_00(u32 code){
@@ -397,7 +403,8 @@ void c_result(){
     log_tested_print("OP_C_10", c_opcodes_10, 8);
     log_tested_print("OP_C_01 sub1 ", c_opcodes_01_sub1, 4);
     log_tested_print("OP_C_01 sub2 ", c_opcodes_01_sub2, 4);
-    log_tested_print("OP_C_01 sub1 ", c_opcodes_10_sub1, 2);
+    log_tested_print("OP_C_10 sub1 ", c_opcodes_10_sub1, 2);
+    log_tested_print("OP_C_10 sub2 ", c_opcodes_10_sub2, 2);
 }
 
 void  __attribute__((constructor)) c_opcodes_group_init(){
@@ -454,9 +461,9 @@ void  __attribute__((constructor)) c_opcodes_group_init(){
         c_opcodes_01_sub2[i].count = 0;
     }
     c_opcodes_01_sub2[0].exec = c_sub;
-    c_opcodes_01_sub2[0].exec = c_xor;
-    c_opcodes_01_sub2[0].exec = c_or;
-    c_opcodes_01_sub2[0].exec = c_and;
+    c_opcodes_01_sub2[1].exec = c_xor;
+    c_opcodes_01_sub2[2].exec = c_or;
+    c_opcodes_01_sub2[3].exec = c_and;
 
     for (i = 0; i < 2; i++) {
         c_opcodes_10_sub1[i].exec = invalid_opcode;
@@ -464,5 +471,13 @@ void  __attribute__((constructor)) c_opcodes_group_init(){
     }
     c_opcodes_10_sub1[0].exec = c_jr_mv;
     c_opcodes_10_sub1[1].exec = c_ebreak_jalr_add;
+
+    for (i = 0; i < 2; i++) {
+        c_opcodes_10_sub2[i].exec = invalid_opcode;
+        c_opcodes_10_sub2[i].count = 0;
+    }
+    c_opcodes_10_sub2[0].exec = c_jr;
+    c_opcodes_10_sub2[1].exec = c_mv;
+
 }
 
