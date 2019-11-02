@@ -46,8 +46,7 @@ module xrv_ex(
     localparam logic [31:0] ALL0 = 32'h0;
     localparam logic [31:0] ALL1 = 32'hFFFF_FFFF; 
 
-    logic op_imm_dly;
-    logic op_reg_dly;
+    logic ld_done;
 
 
     (* ram_style = "distributed" *) logic [31:0] x_reg[0:31];
@@ -81,34 +80,53 @@ module xrv_ex(
 
     wire signed [31:0] operand1 = reg1;
     wire operand2_is_unsigned = (funct3 == 3);
-    wire signed [31:0] operand2 = (op_reg|op_branch|op_store) ? reg2 : (operand2_is_unsigned ? imm_unsigned : imm_signed);
+    wire signed [31:0] operand2 = (op_reg) ? reg2 : (operand2_is_unsigned ? imm_unsigned : imm_signed);
 
     logic [31:0] dest_reg;
     logic dest_reg_wr_en;
 
     wire ex_en = ex_valid&~ex_jmp;
 
-    always @(posedge clk or negedge rstb) begin
-        if(~rstb) begin
-            op_imm_dly <= 0;
-            op_reg_dly <= 0;
-        end else begin
-            op_imm_dly <= op_imm;
-            op_reg_dly <= op_reg;
-        end
-    end 
-
-    wire [31:0] operand_rs =(funct7[5] ? operand1 >>> operand2[4:0] : operand1 >> operand2[4:0]);
-    logic [31:0] dest_reg_pre;
+    logic [31:0] dest_reg_op_imm_or_op_reg;
+    logic [31:0] dest_reg_op_load;
+    logic [31:0] operand1_minus_operand2;
+    logic [31:0] operand1_plus_operand2;
+    logic        operand1_lt_operand2;
+    logic        operand1_lt_operand2_u;
+    logic [31:0] operand_ls;
+    logic [31:0] operand_rs;
     always @(posedge clk) begin
-        dest_reg_pre <= funct3 == 3'b000 ? ( (funct7[5]&op_reg) ? operand1 - operand2 : operand1 + operand2) :
-                        funct3 == 3'b001 ? operand1 << operand2[4:0] :
-                        funct3 == 3'b010 ? (operand1 < operand2 ? 32'h1 : 32'h0) :
-                        funct3 == 3'b011 ? ( ($unsigned(operand1) < $unsigned(operand2)) ? 32'h1 : 32'h0) :
-                        funct3 == 3'b100 ? operand1 ^ operand2 :
-                        funct3 == 3'b101 ? operand_rs :
-                        funct3 == 3'b110 ? operand1 | operand2 :
-                                           operand1 & operand2;
+        operand1_minus_operand2 <= operand1 - operand2;
+        operand1_plus_operand2  <= operand1 + operand2;
+        operand1_lt_operand2_u <= $unsigned(operand1) < $unsigned(operand2);
+        operand1_lt_operand2   <= $signed(operand1) < $signed(operand2);
+        operand_rs <= (funct7[5] ? operand1 >>> operand2[4:0] : operand1 >> operand2[4:0]);
+        operand_ls <= operand1 << operand2[4:0];
+        dest_reg_op_imm_or_op_reg <= 
+                                     funct3 == 3'b100 ? operand1 ^ operand2 :
+                                     funct3 == 3'b110 ? operand1 | operand2 :
+                                                        operand1 & operand2;
+        dest_reg_op_load <= funct3 == 3'b000 ? (
+                            d_addr[1:0] == 0 ? {d_rd_data[7] ? ALL1[31:8] : ALL0[31:8],d_rd_data[7:0]} :
+                            d_addr[1:0] == 1 ? {d_rd_data[15] ? ALL1[31:8] : ALL0[31:8], d_rd_data[15:8]} :
+                            d_addr[1:0] == 2 ? {d_rd_data[23] ? ALL1[31:8] : ALL0[31:8], d_rd_data[23:16]} :
+                                               {d_rd_data[31] ? ALL1[31:8] : ALL0[31:8], d_rd_data[31:24]}
+                       ) :
+                       funct3 == 3'b001 ? (
+                           d_addr[1] == 0 ? {d_rd_data[15] ? ALL1[31:16] : ALL0[31:16], d_rd_data[15:0]} :
+                                            {d_rd_data[31] ? ALL1[31:16] : ALL0[31:16], d_rd_data[31:16]}
+                       ) :
+                       funct3 == 3'b010 ? d_rd_data[31:0] :
+                       funct3 == 3'b100 ? (
+                            d_addr[1:0] == 0 ? {ALL0[31:8],d_rd_data[7:0]} :
+                            d_addr[1:0] == 1 ? {ALL0[31:8],d_rd_data[15:8]} :
+                            d_addr[1:0] == 2 ? {ALL0[31:8],d_rd_data[23:16]} :
+                                               {ALL0[31:8],d_rd_data[31:24]}
+                       ):
+                       funct3 == 3'b101 ? (
+                           d_addr[1] == 0 ? {ALL0[31:16],d_rd_data[15:0]} : {ALL0[31:16],d_rd_data[31:16]}
+                       ) : 32'h0;
+
     end 
 
     logic ncycle_alu_cmp;
@@ -129,27 +147,8 @@ module xrv_ex(
     always @(*) begin
             dest_reg_wr_en = 0;
             dest_reg = 0;
-            if(d_rd_req&d_rd_ready) begin
-                dest_reg = funct3 == 3'b000 ? (
-                                    d_addr[1:0] == 0 ? {d_rd_data[7] ? ALL1[31:8] : ALL0[31:8],d_rd_data[7:0]} :
-                                    d_addr[1:0] == 1 ? {d_rd_data[15] ? ALL1[31:8] : ALL0[31:8], d_rd_data[15:8]} :
-                                    d_addr[1:0] == 2 ? {d_rd_data[23] ? ALL1[31:8] : ALL0[31:8], d_rd_data[23:16]} :
-                                                       {d_rd_data[31] ? ALL1[31:8] : ALL0[31:8], d_rd_data[31:24]}
-                               ) :
-                               funct3 == 3'b001 ? (
-                                   d_addr[1] == 0 ? {d_rd_data[15] ? ALL1[31:16] : ALL0[31:16], d_rd_data[15:0]} :
-                                                    {d_rd_data[31] ? ALL1[31:16] : ALL0[31:16], d_rd_data[31:16]}
-                               ) :
-                               funct3 == 3'b010 ? d_rd_data[31:0] :
-                               funct3 == 3'b100 ? (
-                                    d_addr[1:0] == 0 ? {ALL0[31:8],d_rd_data[7:0]} :
-                                    d_addr[1:0] == 1 ? {ALL0[31:8],d_rd_data[15:8]} :
-                                    d_addr[1:0] == 2 ? {ALL0[31:8],d_rd_data[23:16]} :
-                                                       {ALL0[31:8],d_rd_data[31:24]}
-                               ):
-                               funct3 == 3'b101 ? (
-                                   d_addr[1] == 0 ? {ALL0[31:16],d_rd_data[15:0]} : {ALL0[31:16],d_rd_data[31:16]}
-                               ) : 32'h0;
+            if(ld_done) begin
+                dest_reg = dest_reg_op_load;
                 dest_reg_wr_en = 1;
                 `LOG_CORE($sformatf("PC=%05x OP_LOAD %08x from %08x\n", ex_pc, d_rd_data, d_addr));
             end else if(ex_en) begin
@@ -168,7 +167,11 @@ module xrv_ex(
                 end
             end else if(ncycle_alu_cmp) begin
                 if(op_imm|op_reg) begin
-                    dest_reg = dest_reg_pre;
+                    dest_reg = funct3 == 3'b000 ? ( (funct7[5]&op_reg) ? operand1_minus_operand2 : operand1_plus_operand2) :
+                               funct3 == 3'b001 ? operand_ls :
+                               funct3 == 3'b101 ? operand_rs :
+                               funct3 == 3'b010 ? {31'h0,operand1_lt_operand2} :
+                               funct3 == 3'b011 ? {31'h0,operand1_lt_operand2_u} : dest_reg_op_imm_or_op_reg;
                     dest_reg_wr_en = 1;
                 end
             end
@@ -186,11 +189,9 @@ module xrv_ex(
 * JMP
 ********************************************************************************/ 
     logic operand_eq;
-    logic operand_lt;
-    logic operand_ltu;
+    wire operand_lt  = $signed(reg1) < $signed(reg2);
+    wire operand_ltu = $unsigned(reg1) < $unsigned(reg2);
     assign operand_eq  = reg1 == reg2;
-    assign operand_lt  = $signed(reg1) < $signed(reg2);
-    assign operand_ltu = $unsigned(reg1) < $unsigned(reg2);
 
     wire branch = op_branch & ( ( (funct3 == 3'b000) & operand_eq) |
                                 ( (funct3 == 3'b001) & ~operand_eq) |
@@ -211,9 +212,15 @@ module xrv_ex(
         end
     end
      
+    logic signed [31:0] branch_addr;
+    logic signed [31:0] jalr_addr;
+    logic        branch_reg;
     always @(posedge clk) begin
-        ex_jmp_addr <= branch ? ex_pc + imm_signed : reg1 + imm_signed;
+        branch_addr <= ex_pc + imm_signed;
+        jalr_addr <= reg1 + imm_signed;
+        branch_reg <= branch;
     end
+    assign ex_jmp_addr = branch_reg ? branch_addr : jalr_addr;
 
 /*******************************************************************************
 *  Load/Store 
@@ -275,7 +282,14 @@ module xrv_ex(
         end
     end
      
+    always @(posedge clk or negedge rstb) begin
+        if(~rstb) begin
+            ld_done <= 0;
+        end else begin
+            ld_done <= d_rd_req&d_rd_ready;
+        end
+    end 
 
-    assign ls_done = (d_rd_req&d_rd_ready) | (d_wr_req&d_wr_ready);
+    assign ls_done = ld_done | (d_wr_req&d_wr_ready);
      
 endmodule

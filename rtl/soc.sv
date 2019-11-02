@@ -1,6 +1,4 @@
 `include "glb.svh"
-(* keep_hierarchy = "yes" *)
-
 module soc#(
     parameter XLEN = 32,
     parameter ADDR_LEN = 16,

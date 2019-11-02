@@ -36,7 +36,9 @@ module d_mux#(
     
 // ready
 logic ram_rd_req;
+logic ram_rd_ready_pre;
 logic ram_rd_ready;
+logic [31:0] ram_rd_data_dly;
 logic ram_wr_req;
 logic ram_wr_ready;
 //wire  ram_wr_ready = 1;
@@ -55,16 +57,23 @@ always @(posedge clk or negedge rstb) begin
     end
 end
  
+always @(posedge clk or negedge rstb) begin
+    if(~rstb) begin
+        ram_rd_ready_pre <= 0;
+    end else begin
+        if(ram_rd_req&ram_rd_ready) begin
+            ram_rd_ready_pre <= 0;
+        end else if(ram_rd_req) begin
+            ram_rd_ready_pre <= 1;
+        end
+    end
+end 
 
 always @(posedge clk or negedge rstb) begin
     if(~rstb) begin
         ram_rd_ready <= 0;
     end else begin
-        if(ram_rd_req&ram_rd_ready) begin
-            ram_rd_ready <= 0;
-        end else if(ram_rd_req) begin
-            ram_rd_ready <= 1;
-        end
+        ram_rd_ready <= ram_rd_ready_pre;
     end
 end
 
@@ -84,9 +93,12 @@ assign wr_ready = d_is_from_io_dly ? io_wr_ready&wr_req : ram_wr_ready;
 // rd_data
 
 always @(posedge clk) begin
+    ram_rd_data_dly <= ram_rd_data;
+end 
+always @(posedge clk) begin
     d_is_from_io_dly <= d_is_from_io;
 end
-assign rd_data = d_is_from_io_dly ? io_rd_data : ram_rd_data;
+assign rd_data = d_is_from_io_dly ? io_rd_data : ram_rd_data_dly;
 
 // wr_en, be, wr_data
 assign io_wr_req = d_is_from_io ? wr_req : 1'b0;
