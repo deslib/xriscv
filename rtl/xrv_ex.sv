@@ -103,48 +103,15 @@ module xrv_ex(
     logic        operand1_lt_operand2_u;
     logic [31:0] operand_ls;
     logic [31:0] operand_rs;
+    wire operand_30_1_lt;
+    wire operand_lt;
+    wire operand_ltu;
 
-    //logic ncycle_alu_cmp;
-    //logic op_imm_reg;
-    //logic op_reg_reg;
-    //logic funct3_is_0_reg;
-    //logic funct3_is_1_reg;
-    //logic funct3_is_2_reg;
-    //logic funct3_is_3_reg;
-    //logic funct3_is_4_reg;
-    //logic funct3_is_5_reg;
-    //logic funct3_is_6_reg;
-    //logic funct3_is_7_reg;
-    //logic funct7_bit5_reg;
-    //logic [4:0] dest_reg;
     logic dest_not0;
     logic ex_imm_reg;
 
+    wire ex_en = (ex_valid&~ex_jmp);
     `ifdef OP_IMM_REG_2_STAGE
-    wire ex_en;
-    //assign ncycle_alu_wait = ex_en & (op_imm|op_reg) & ~ncycle_alu_cmp;
-    //logic [1:0] ncycle_alu_wait_dly;
-    //assign ex_en = (ex_valid|ncycle_alu_wait_dly[1])&~ex_jmp&~ncycle_alu_wait_dly[0];
-    assign ex_en = (ex_valid&~ex_jmp);
-    //always @(posedge clk or negedge rstb) begin
-    //    if(~rstb) begin
-    //        ncycle_alu_wait_dly <= 0;
-    //    end else begin
-    //        ncycle_alu_wait_dly <= {ncycle_alu_wait_dly[0],ncycle_alu_wait};
-    //    end
-    //end 
-
-    //always @(posedge clk or negedge rstb) begin
-    //    if(~rstb) begin
-    //        ncycle_alu_cmp <= 0;
-    //    end else begin
-    //        if(ex_en & (op_imm | op_reg) ) begin
-    //            ncycle_alu_cmp <= 1;
-    //        end else begin
-    //            ncycle_alu_cmp <= 0;
-    //        end
-    //    end
-    //end 
 
     always @(posedge clk or negedge rstb) begin
         if(~rstb) begin
@@ -157,54 +124,27 @@ module xrv_ex(
     always @(posedge clk) begin
         operand1_minus_operand2 <= operand1 - operand2;
         operand1_plus_operand2  <= operand1 + operand2;
-        operand1_lt_operand2_u <= $unsigned(operand1) < $unsigned(operand2);
-        operand1_lt_operand2   <= $signed(operand1) < $signed(operand2);
+        operand1_lt_operand2_u <= operand_ltu;
+        operand1_lt_operand2   <= operand_lt;
         operand_rs <= (funct7_bit5 ? operand1 >>> operand2[4:0] : operand1 >> operand2[4:0]);
         operand_ls <= operand1 << operand2[4:0];
         dest_reg_op_imm_or_op_reg <= funct3_is_4 ? operand1 ^ operand2 :
                                      funct3_is_6 ? operand1 | operand2 :
-                                                        operand1 & operand2;
-        //op_imm_reg <= op_imm;
-        //op_reg_reg <= op_reg;
-        //funct3_is_0_reg <= funct3_is_0;
-        //funct3_is_1_reg <= funct3_is_1;
-        //funct3_is_2_reg <= funct3_is_2;
-        //funct3_is_3_reg <= funct3_is_3;
-        //funct3_is_4_reg <= funct3_is_4;
-        //funct3_is_5_reg <= funct3_is_5;
-        //funct3_is_6_reg <= funct3_is_6;
-        //funct3_is_7_reg <= funct3_is_7;
-        //funct7_bit5_reg <= funct7_bit5;
-        //dest_reg <= dest;
+                                                   operand1 & operand2;
     end
     `else
-        wire ex_en = ex_valid&~ex_jmp;
         assign ex_imm_reg = ex_en & (op_imm | op_reg);
-        //assign ncycle_alu_wait = 0;
-        //assign ncycle_alu_cmp = ex_en & (op_imm|op_reg);
         always @(*) begin
             operand1_minus_operand2 = operand1 - operand2;
             operand1_plus_operand2  = operand1 + operand2;
-            operand1_lt_operand2_u = $unsigned(operand1) < $unsigned(operand2);
-            operand1_lt_operand2   = $signed(operand1) < $signed(operand2);
+            operand1_lt_operand2_u = operand_ltu;
+            operand1_lt_operand2   = operand_lt;
             operand_rs = (funct7_bit5 ? operand1 >>> operand2[4:0] : operand1 >> operand2[4:0]);
             operand_ls = operand1 << operand2[4:0];
             dest_reg_op_imm_or_op_reg = funct3_is_4 ? operand1 ^ operand2 :
                                         funct3_is_6 ? operand1 | operand2 :
                                                             operand1 & operand2;
         end
-        //assign op_imm_reg = op_imm;
-        //assign op_reg_reg = op_reg;
-        //assign funct3_is_0_reg = funct3_is_0;
-        //assign funct3_is_1_reg = funct3_is_1;
-        //assign funct3_is_2_reg = funct3_is_2;
-        //assign funct3_is_3_reg = funct3_is_3;
-        //assign funct3_is_4_reg = funct3_is_4;
-        //assign funct3_is_5_reg = funct3_is_5;
-        //assign funct3_is_6_reg = funct3_is_6;
-        //assign funct3_is_7_reg = funct3_is_7;
-        //assign funct7_bit5_reg = funct7_bit5;
-        //assign dest_reg = dest;
     `endif
     assign dest_not0 = |dest;
 
@@ -252,8 +192,15 @@ module xrv_ex(
 * JMP
 ********************************************************************************/ 
     logic operand_eq;
-    wire operand_lt  = $signed(operand1) < $signed(operand2);
-    wire operand_ltu = $unsigned(operand1) < $unsigned(operand2);
+    assign operand_lt = $signed(operand1) < $signed(operand2);
+    assign operand_ltu = $unsigned(operand1) < $unsigned(operand2);
+    //assign operand_30_1_lt = operand1[30:0] < operand2[30:0];
+    //assign operand_lt = ({operand1[31],operand2[31]} == 2'b10) ? 1'b1 :
+    //                  ({operand1[31],operand2[31]} == 2'b01) ? 1'b0 :
+    //                  ({operand1[31],operand2[31]} == 2'b00) ? operand_30_1_lt : ~operand_30_1_lt;
+    //assign operand_ltu = ({operand1[31],operand2[31]} == 2'b10) ? 1'b0 :
+    //                  ({operand1[31],operand2[31]} == 2'b01) ? 1'b1 : operand_30_1_lt;
+                       
     assign operand_eq  = operand1 == operand2;
 
     wire branch = op_branch & (  (funct3_is_0 & operand_eq) |

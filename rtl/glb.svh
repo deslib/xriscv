@@ -1,5 +1,7 @@
 `ifndef __GLB__
 
+//`define OP_IMM_REG_2_STAGE
+
 `define UART
 
 `define OP_LUI      5'b01_101
