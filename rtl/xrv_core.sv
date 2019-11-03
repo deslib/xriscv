@@ -44,8 +44,6 @@ module xrv_core(
     logic [4:0] src1;
     logic [4:0] src2;
     logic [4:0] dest;
-    logic [2:0] funct3;
-    logic [6:0] funct7;
 
     xrv_ctrl U_XRV_CTRL(
         .clk(clk),
@@ -56,7 +54,6 @@ module xrv_core(
         .id_jmp_addr(id_jmp_addr),
         .ex_jmp(ex_jmp),
         .ex_jmp_addr(ex_jmp_addr),
-        .ncycle_alu_wait(ncycle_alu_wait),
         .stalling(stalling),
         .flush(flush),
         .jmp(jmp),
@@ -106,8 +103,15 @@ module xrv_core(
         .src1(src1),
         .src2(src2),
         .dest(dest),
-        .funct3(funct3),
-        .funct7(funct7),
+        .funct3_is_0(funct3_is_0),
+        .funct3_is_1(funct3_is_1),
+        .funct3_is_2(funct3_is_2),
+        .funct3_is_3(funct3_is_3),
+        .funct3_is_4(funct3_is_4),
+        .funct3_is_5(funct3_is_5),
+        .funct3_is_6(funct3_is_6),
+        .funct3_is_7(funct3_is_7),
+        .funct7_bit5(funct7_bit5),
 
         .ex_pc(ex_pc),
         .ex_valid(ex_valid)
@@ -121,7 +125,6 @@ module xrv_core(
 
         .ex_jmp(ex_jmp),
         .ex_jmp_addr(ex_jmp_addr),
-        .ncycle_alu_wait(ncycle_alu_wait),
         .ls_done(ls_done),
     
         .ex_valid(ex_valid),
@@ -142,8 +145,15 @@ module xrv_core(
         .src1(src1),
         .src2(src2),
         .dest(dest),
-        .funct3(funct3),
-        .funct7(funct7),
+        .funct3_is_0(funct3_is_0),
+        .funct3_is_1(funct3_is_1),
+        .funct3_is_2(funct3_is_2),
+        .funct3_is_3(funct3_is_3),
+        .funct3_is_4(funct3_is_4),
+        .funct3_is_5(funct3_is_5),
+        .funct3_is_6(funct3_is_6),
+        .funct3_is_7(funct3_is_7),
+        .funct7_bit5(funct7_bit5),
     
         .d_addr(d_addr),
         .d_wr_req(d_wr_req),

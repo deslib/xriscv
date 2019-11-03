@@ -76,7 +76,23 @@ module xrv_if(
 *   Fetch i_data from fifo and do inst decompress
 ********************************************************************************/ 
     logic [31:0] inst_decompress;
-    assign i_data_rd_en = ~i_data_empty & ~stalling & ~jmp;
+    `ifdef OP_IMM_REG_2_STAGE
+    logic wait_cycle;
+    always @(posedge clk or negedge rstb) begin
+        if(~rstb) begin
+            wait_cycle <= 0;
+        end else begin
+            if(i_data_rd_en) begin
+                wait_cycle <= ~(inst_decompress[6]|~inst_decompress[4]|inst_decompress[3]|inst_decompress[2]); //op_imm and op_reg need 2cycles
+            end else begin
+                wait_cycle <= 0;
+            end
+        end
+    end 
+    `else
+    wire wait_cycle = 0;
+    `endif
+    assign i_data_rd_en = ~i_data_empty & ~stalling & ~jmp & ~wait_cycle;
      
     xrv_i_decompress U_XRV_I_DECOMPRESS(
         .data_in(i_data_align),

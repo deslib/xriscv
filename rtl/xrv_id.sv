@@ -30,8 +30,15 @@ module xrv_id(
     output logic [4:0]          src1,
     output logic [4:0]          src2,
     output logic [4:0]          dest,
-    output logic [2:0]          funct3,
-    output logic [6:0]          funct7,
+    output logic                funct3_is_0,
+    output logic                funct3_is_1,
+    output logic                funct3_is_2,
+    output logic                funct3_is_3,
+    output logic                funct3_is_4,
+    output logic                funct3_is_5,
+    output logic                funct3_is_6,
+    output logic                funct3_is_7,
+    output logic                funct7_bit5,
 
     output logic [31:0]         ex_pc,
     output logic                ex_valid
@@ -111,8 +118,15 @@ module xrv_id(
             src1 <= inst[19:15];
             src2 <= inst[24:20];
             dest <= inst[11:7];
-            funct3 <= inst[14:12];
-            funct7 <= inst[31:25];
+            funct3_is_0 <= inst[14:12] == 0;
+            funct3_is_1 <= inst[14:12] == 1;
+            funct3_is_2 <= inst[14:12] == 2;
+            funct3_is_3 <= inst[14:12] == 3;
+            funct3_is_4 <= inst[14:12] == 4;
+            funct3_is_5 <= inst[14:12] == 5;
+            funct3_is_6 <= inst[14:12] == 6;
+            funct3_is_7 <= inst[14:12] == 7;
+            funct7_bit5 <= inst[30];
         end
     end
 
