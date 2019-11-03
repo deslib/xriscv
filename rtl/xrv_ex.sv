@@ -82,7 +82,7 @@ module xrv_ex(
     wire operand2_is_unsigned = (funct3 == 3);
     wire signed [31:0] operand2 = (op_reg|op_branch|op_store) ? reg2 : (operand2_is_unsigned ? imm_unsigned : imm_signed);
 
-    logic [31:0] dest_reg;
+    logic [31:0] dest_reg_val;
     logic dest_reg_wr_en;
 
 
@@ -100,6 +100,7 @@ module xrv_ex(
     logic op_reg_reg;
     logic [2:0] funct3_reg;
     logic funct7_bit5;
+    logic [4:0] dest_reg;
 
     `ifdef OP_IMM_REG_2_STAGE
     wire ex_en;
@@ -140,6 +141,7 @@ module xrv_ex(
         op_reg_reg <= op_reg;
         funct3_reg <= funct3;
         funct7_bit5 <= funct7[5];
+        dest_reg <= dest;
     end
     `else
         wire ex_en = ex_valid&~ex_jmp;
@@ -188,14 +190,14 @@ module xrv_ex(
 
     always @(*) begin
             dest_reg_wr_en = 0;
-            dest_reg = 0;
+            dest_reg_val = 0;
             if(ld_done) begin
-                dest_reg = dest_reg_op_load;
+                dest_reg_val = dest_reg_op_load;
                 dest_reg_wr_en = 1;
                 `LOG_CORE($sformatf("PC=%05x OP_LOAD %08x from %08x\n", ex_pc, d_rd_data, d_addr));
             end else if(ncycle_alu_cmp) begin
                 if(op_imm_reg | op_reg_reg) begin
-                    dest_reg = funct3_reg == 3'b000 ? ( (funct7_bit5&op_reg_reg) ? operand1_minus_operand2 : operand1_plus_operand2) :
+                    dest_reg_val = funct3_reg == 3'b000 ? ( (funct7_bit5&op_reg_reg) ? operand1_minus_operand2 : operand1_plus_operand2) :
                                funct3_reg == 3'b001 ? operand_ls :
                                funct3_reg == 3'b101 ? operand_rs :
                                funct3_reg == 3'b010 ? {31'h0,operand1_lt_operand2} :
@@ -204,15 +206,15 @@ module xrv_ex(
                 end
             end else if(ex_en) begin
                 if(op_lui) begin
-                    dest_reg = imm_signed;
+                    dest_reg_val = imm_signed;
                     dest_reg_wr_en = 1;
                     `LOG_CORE($sformatf("PC=%05x LUI\n",ex_pc));
                 end else if(op_auipc) begin
-                    dest_reg = ex_pc + $signed(imm_signed&32'hFFFFF000) + 4;
+                    dest_reg_val = ex_pc + $signed(imm_signed&32'hFFFFF000) + 4;
                     dest_reg_wr_en = 1;
                     `LOG_CORE($sformatf("PC=%05x AUIPC \n",ex_pc));
                 end else if(op_jal|op_jalr) begin
-                    dest_reg = ex_pc + (op_is_compressed ? 2 : 4);
+                    dest_reg_val = ex_pc + (op_is_compressed ? 2 : 4);
                     dest_reg_wr_en = 1;
                     `LOG_CORE($sformatf("PC=%05x OP_JAL|OP_JALR\n",ex_pc));
                 end
@@ -220,8 +222,8 @@ module xrv_ex(
     end
 
     always @(posedge clk) begin
-        if(dest_reg_wr_en & (|dest)) begin
-            x_reg[dest] <= dest_reg;
+        if(dest_reg_wr_en & (|dest_reg)) begin
+            x_reg[dest_reg] <= dest_reg_val;
         end
     end
      
