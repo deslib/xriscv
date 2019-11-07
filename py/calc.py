@@ -10,3 +10,9 @@ def div(dividend, divisor):
             quotient = (quotient << 1) + 0
         remainder = remainder << 1
     return quotient,remainder >> 33
+
+def bin2comp():
+    pass
+
+def mult(a,b,optype):
+    

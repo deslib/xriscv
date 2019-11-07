@@ -6,10 +6,12 @@ module tb_mul_div;
     logic        rstb;
     logic [31:0] a;
     logic [31:0] b;
-    logic [31:0] result;
     logic        valid;
     logic [5:0]  cnt;
     logic [2:0]  optype;
+    logic [31:0] result_mult;
+    logic [31:0] result_div;
+    wire         result_valid;
 
     always @(posedge clk or negedge rstb) begin
         if(~rstb) begin
@@ -38,5 +40,30 @@ module tb_mul_div;
 
     wire mul_valid = valid & (optype < 6);
     wire div_valid = valid & (optype >= 6);
+
+xrv_mult U_XRV_MULT(
+    .clk(clk),
+    .rstb(rstb),
+    .a(a),
+    .b(b),
+    .mult_type(optype),
+    .valid(mul_valid),
+
+    .result(result_mult),
+    .result_valid(result_valid)
+);
+
+xrv_div(
+    .clk(clk),
+    .rstb(rstb),
+    .dividend(dividend),
+    .divisor(divisor),
+    .is_div_sign(is_div_sign),
+    .optype(optype), //0: div; 1: rem
+    .valid(valid),
+    .result(result_div),
+    .result_valid(result_valid)
+);
+
 
 endmodule

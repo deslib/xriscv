@@ -12,6 +12,8 @@
 ../rtl/rom.sv
 ../rtl/xrv_i_decompress.sv
 ../rtl/xrv_ctrl.sv
+../rtl/xrv_mult.sv
+../rtl/xrv_div.sv
 ../rtl/xrv_id.sv
 ../rtl/xrv_if.sv
 ../rtl/xrv_ex.sv
@@ -23,3 +25,4 @@
 ../rtl/uart_mgr.sv
 ../rtl/soc.sv
 ../tb/tb_soc.sv
+../tb/tb_mul_div.sv

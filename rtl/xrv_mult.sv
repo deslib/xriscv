@@ -74,9 +74,9 @@ module xrv_mult(
     end
 
     assign result = mult_type == 3'b000 ? result64[31:0] :
-                    mult_type == 3'b001 ? {sign,result64[62:32]} :
+                    mult_type == 3'b001 ? {a_sign^b_sign,result64[62:32]} :
                     mult_type == 3'b010 ? {a[31],result64[62:32]} :
-                                          result63[63:32];
+                                          result64[63:32];
 
     logic calc_result_valid;
     always @(posedge clk or negedge rstb) begin

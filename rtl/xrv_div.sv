@@ -1,13 +1,13 @@
 module xrv_div(
     input               clk,
     input               rstb,
-    input        [31:0] dividend
+    input        [31:0] dividend,
     input        [31:0] divisor,
     input               is_div_sign,
     input               optype, //0: div; 1: rem
     input               valid,
     output logic [31:0] result,
-    output        result_valid
+    output logic        result_valid
 );
 
     logic [31:0] quotient;
@@ -19,14 +19,14 @@ module xrv_div(
     logic [4:0]  calc_cnt;
 
     wire [31:0] dividend_abs = is_div_sign ? 
-                                dividend[31] ? ({1'b0,(~dividend[30:0] + 31'h1)} : 
+                                (dividend[31] ? {1'b0,(~dividend[30:0] + 31'h1)} : 
                                                {1'b0,dividend[30:0]}) :
                                 dividend[31:0];
     wire [31:0] divisor_abs  = is_div_sign ? 
-                                divisor[31] ? ({1'b0,(~divisor[30:0] + 31'h1)} : 
+                                (divisor[31] ? {1'b0,(~divisor[30:0] + 31'h1)} : 
                                                {1'b0,divisor[30:0]}) :
                                 divisor[31:0];
-    wire        sign         = is_div_sign ? dividend[31] ^ dividor[31] : 1'b0;
+    wire        sign         = is_div_sign ? dividend[31] ^ divisor[31] : 1'b0;
     wire [31:0] remainder_h  = remainder[63:32] - divisor;
     always @(posedge clk) begin
         if(valid) begin
@@ -38,7 +38,7 @@ module xrv_div(
             optype_reg   <= 1;
         end else begin
             if(calc_en) begin
-                if(remainder[63:32] >= dividend_reg) begin
+                if(remainder[63:32] >= divisor_reg) begin
                     quotient  <= {quotient[30:0],1'b1};
                     remainder <= {remainder_h[30:0],remainder[31:0],1'b0};
                 end else begin
@@ -79,7 +79,7 @@ module xrv_div(
             result <= 0;
         end else begin
             result_valid <= (calc_cnt == 5'h1f)&calc_en;
-            resunt <= optype_reg ? remainder : quotient;
+            result <= optype_reg ? remainder : quotient;
         end
     end 
 

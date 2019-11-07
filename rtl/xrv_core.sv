@@ -22,6 +22,7 @@ module xrv_core(
     logic [31:0] ex_pc_branch;
     logic [31:0] inst;
     logic [31:0] inst_pc;
+    logic [2:0]  funct3;
     logic ls_done;
     logic id_jmp;
     logic [31:0] id_jmp_addr;
@@ -106,14 +107,7 @@ module xrv_core(
         .src1(src1),
         .src2(src2),
         .dest(dest),
-        .funct3_is_0(funct3_is_0),
-        .funct3_is_1(funct3_is_1),
-        .funct3_is_2(funct3_is_2),
-        .funct3_is_3(funct3_is_3),
-        .funct3_is_4(funct3_is_4),
-        .funct3_is_5(funct3_is_5),
-        .funct3_is_6(funct3_is_6),
-        .funct3_is_7(funct3_is_7),
+        .funct3(funct3),
         .funct7_bit5(funct7_bit5),
 
         .ex_pc(ex_pc),
@@ -127,7 +121,6 @@ module xrv_core(
     xrv_ex U_XRV_EX(
         .clk(clk),
         .rstb(rstb),
-        //.flush(flush),
 
         .ex_jmp(ex_jmp),
         .ex_jmp_addr(ex_jmp_addr),
@@ -154,14 +147,7 @@ module xrv_core(
         .src1(src1),
         .src2(src2),
         .dest(dest),
-        .funct3_is_0(funct3_is_0),
-        .funct3_is_1(funct3_is_1),
-        .funct3_is_2(funct3_is_2),
-        .funct3_is_3(funct3_is_3),
-        .funct3_is_4(funct3_is_4),
-        .funct3_is_5(funct3_is_5),
-        .funct3_is_6(funct3_is_6),
-        .funct3_is_7(funct3_is_7),
+        .funct3(funct3),
         .funct7_bit5(funct7_bit5),
     
         .d_addr(d_addr),

@@ -5,11 +5,9 @@
 module xrv_ex(
     input                       clk,
     input                       rstb,
-    //input                       flush,
 
     output logic                ex_jmp,
     output logic [31:0]         ex_jmp_addr,
-    //output logic                ncycle_alu_wait,
     output                      ls_done,
 
     input                       ex_valid,
@@ -33,17 +31,8 @@ module xrv_ex(
     input        [4:0]          src1,
     input        [4:0]          src2,
     input        [4:0]          dest,
-    input                       funct3_is_0,
-    input                       funct3_is_1,
-    input                       funct3_is_2,
-    input                       funct3_is_3,
-    input                       funct3_is_4,
-    input                       funct3_is_5,
-    input                       funct3_is_6,
-    input                       funct3_is_7,
     input                       funct7_bit5,
-    //input        [2:0]          funct3,
-    //input        [6:0]          funct7,
+    input        [2:0]          funct3,
 
     output logic [31:0]         d_addr,
     output logic                d_wr_req,
@@ -59,6 +48,15 @@ module xrv_ex(
     localparam logic [31:0] ALL1 = 32'hFFFF_FFFF; 
 
     logic ld_done;
+
+    wire funct3_is_0 = funct3 == 3'd0;
+    wire funct3_is_1 = funct3 == 3'd1;
+    wire funct3_is_2 = funct3 == 3'd2;
+    wire funct3_is_3 = funct3 == 3'd3;
+    wire funct3_is_4 = funct3 == 3'd4;
+    wire funct3_is_5 = funct3 == 3'd5;
+    wire funct3_is_6 = funct3 == 3'd6;
+    wire funct3_is_7 = funct3 == 3'd7;
 
 
     (* ram_style = "distributed" *) logic [31:0] x_reg[0:31];
