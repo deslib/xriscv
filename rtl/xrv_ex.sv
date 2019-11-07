@@ -14,6 +14,9 @@ module xrv_ex(
 
     input                       ex_valid,
     input        [31:0]         ex_pc,
+    input        [31:0]         ex_pc_auipc,
+    input        [31:0]         ex_pc_jmp,
+    input        [31:0]         ex_pc_branch,
     input                       op_lui,              
     input                       op_auipc,
     input                       op_jal,  
@@ -25,7 +28,7 @@ module xrv_ex(
     input                       op_reg,
     input                       op_is_compressed,
 
-    input        [31:0]         imm_signed,
+    input signed [31:0]         imm_signed,
     input        [31:0]         imm_unsigned,
     input        [4:0]          src1,
     input        [4:0]          src2,
@@ -103,7 +106,6 @@ module xrv_ex(
     logic        operand1_lt_operand2_u;
     logic [31:0] operand_ls;
     logic [31:0] operand_rs;
-    wire operand_30_1_lt;
     wire operand_lt;
     wire operand_ltu;
 
@@ -143,7 +145,7 @@ module xrv_ex(
             operand_ls = operand1 << operand2[4:0];
             dest_reg_op_imm_or_op_reg = funct3_is_4 ? operand1 ^ operand2 :
                                         funct3_is_6 ? operand1 | operand2 :
-                                                            operand1 & operand2;
+                                                      operand1 & operand2;
         end
     `endif
     assign dest_not0 = |dest;
@@ -171,11 +173,11 @@ module xrv_ex(
                     dest_reg_wr_en = dest_not0;
                     `LOG_CORE($sformatf("PC=%05x LUI\n",ex_pc));
                 end else if(op_auipc) begin
-                    dest_reg_val = ex_pc + $signed(imm_signed&32'hFFFFF000) + 4;
+                    dest_reg_val = ex_pc_auipc;
                     dest_reg_wr_en = dest_not0;
                     `LOG_CORE($sformatf("PC=%05x AUIPC \n",ex_pc));
                 end else if(op_jal|op_jalr) begin
-                    dest_reg_val = ex_pc + (op_is_compressed ? 2 : 4);
+                    dest_reg_val = ex_pc_jmp;
                     dest_reg_wr_en = dest_not0;
                     `LOG_CORE($sformatf("PC=%05x OP_JAL|OP_JALR\n",ex_pc));
                 end
@@ -194,13 +196,6 @@ module xrv_ex(
     logic operand_eq;
     assign operand_lt = $signed(operand1) < $signed(operand2);
     assign operand_ltu = $unsigned(operand1) < $unsigned(operand2);
-    //assign operand_30_1_lt = operand1[30:0] < operand2[30:0];
-    //assign operand_lt = ({operand1[31],operand2[31]} == 2'b10) ? 1'b1 :
-    //                  ({operand1[31],operand2[31]} == 2'b01) ? 1'b0 :
-    //                  ({operand1[31],operand2[31]} == 2'b00) ? operand_30_1_lt : ~operand_30_1_lt;
-    //assign operand_ltu = ({operand1[31],operand2[31]} == 2'b10) ? 1'b0 :
-    //                  ({operand1[31],operand2[31]} == 2'b01) ? 1'b1 : operand_30_1_lt;
-                       
     assign operand_eq  = operand1 == operand2;
 
     wire branch = op_branch & (  (funct3_is_0 & operand_eq) |
@@ -226,7 +221,7 @@ module xrv_ex(
     logic signed [31:0] jalr_addr;
     logic        branch_reg;
     always @(posedge clk) begin
-        branch_addr <= ex_pc + imm_signed;
+        branch_addr <= ex_pc_branch;
         jalr_addr <= operand1 + imm_signed;
         branch_reg <= branch;
     end
@@ -312,7 +307,7 @@ module xrv_ex(
 
     always @(posedge clk) begin
         if((op_store|op_load)&ex_en) begin
-            d_addr <= reg1 + imm_signed;
+            d_addr <= operand1 + imm_signed;
         end
     end
      

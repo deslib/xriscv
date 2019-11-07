@@ -17,6 +17,9 @@ module xrv_core(
 );
 
     logic [31:0] ex_pc;
+    logic [31:0] ex_pc_auipc;
+    logic [31:0] ex_pc_jmp;
+    logic [31:0] ex_pc_branch;
     logic [31:0] inst;
     logic [31:0] inst_pc;
     logic ls_done;
@@ -114,6 +117,9 @@ module xrv_core(
         .funct7_bit5(funct7_bit5),
 
         .ex_pc(ex_pc),
+        .ex_pc_auipc(ex_pc_auipc),
+        .ex_pc_jmp(ex_pc_jmp),
+        .ex_pc_branch(ex_pc_branch),
         .ex_valid(ex_valid)
 
     );
@@ -129,6 +135,9 @@ module xrv_core(
     
         .ex_valid(ex_valid),
         .ex_pc(ex_pc),
+        .ex_pc_auipc(ex_pc_auipc),
+        .ex_pc_jmp(ex_pc_jmp),
+        .ex_pc_branch(ex_pc_branch),
         .op_lui(op_lui),              
         .op_auipc(op_auipc),
         .op_jal(op_jal),  

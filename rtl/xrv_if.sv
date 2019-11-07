@@ -1,6 +1,7 @@
 /*******************************************************************************
 *   instruction fetcher 
 ********************************************************************************/ 
+`include "glb.svh"
 module xrv_if(
     input               clk,
     input               rstb,
@@ -92,7 +93,8 @@ module xrv_if(
     `else
     wire wait_cycle = 0;
     `endif
-    assign i_data_rd_en = ~i_data_empty & ~stalling & ~jmp & ~wait_cycle;
+    //assign i_data_rd_en = ~i_data_empty & ~stalling & ~jmp & ~wait_cycle;
+    assign i_data_rd_en = ~i_data_empty & ~stalling & ~wait_cycle;
      
     xrv_i_decompress U_XRV_I_DECOMPRESS(
         .data_in(i_data_align),
@@ -104,16 +106,26 @@ module xrv_if(
 ********************************************************************************/  
     logic [31:0] pc;
     logic during_jmp;
-    logic [2:0] jmp_dly;
+    logic [1:0] jmp_dly;
+    logic jmp_addr_bit1;
     wire inst_is_compressed_pre = ~&i_data_align[1:0];
     always @(posedge clk or negedge rstb) begin
         if(~rstb) begin
             jmp_dly <= 0;
         end else begin
-            jmp_dly <= {jmp_dly[1:0],jmp};
+            jmp_dly <= {jmp_dly[0],jmp};
         end
     end
-    wire jmp_settle = jmp_addr[1] ? jmp_dly[1] : jmp_dly[0];
+    always @(posedge clk or negedge rstb) begin
+        if(~rstb) begin
+            jmp_addr_bit1 <= 0;
+        end else begin
+            if(jmp) begin
+                jmp_addr_bit1 <= jmp_addr[1];
+            end
+        end
+    end 
+    wire jmp_settle = jmp_addr_bit1 ? jmp_dly[1] : jmp_dly[0];
     always @(posedge clk or negedge rstb) begin
         if(~rstb) begin
             during_jmp <= 0;
@@ -171,23 +183,23 @@ module xrv_if(
         end
     end
      
-    //assign inst_valid = i_data_rd_en;
-    //assign inst_pc = pc;
-    //assign inst = inst_decompress;
-    //assign inst_is_compressed = inst_is_compressed_pre;
+    assign inst_valid = i_data_rd_en;
+    assign inst_pc = pc;
+    assign inst = inst_decompress;
+    assign inst_is_compressed = inst_is_compressed_pre;
 
-    always @(posedge clk or negedge rstb) begin
-        if(~rstb) begin
-            inst_valid <= 0;
-        end else begin
-            inst_valid <= i_data_rd_en;
-        end
-    end 
+    //always @(posedge clk or negedge rstb) begin
+    //    if(~rstb) begin
+    //        inst_valid <= 0;
+    //    end else begin
+    //        inst_valid <= i_data_rd_en;
+    //    end
+    //end 
 
-    always @(posedge clk) begin
-        inst <= inst_decompress;
-        inst_pc <= pc;
-        inst_is_compressed <= inst_is_compressed_pre;
-    end 
+    //always @(posedge clk) begin
+    //    inst <= inst_decompress;
+    //    inst_pc <= pc;
+    //    inst_is_compressed <= inst_is_compressed_pre;
+    //end 
 
 endmodule

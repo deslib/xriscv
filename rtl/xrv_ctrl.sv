@@ -16,19 +16,20 @@ module xrv_ctrl(
 );
 
     logic during_ls;
+    logic jmp_dly;
     always @(posedge clk or negedge rstb) begin
         if(~rstb) begin
             during_ls <= 0;
         end else begin
-            if(is_ls&~jmp) begin
+            if(is_ls&~jmp&~jmp_dly) begin
                 during_ls <= 1;
-            end else if(ls_done|jmp) begin  //ls follow an jalr. jmp is later than is_ls
+            end else if(ls_done|jmp|jmp_dly) begin  //ls follow an jalr. jmp is later than is_ls
                 during_ls <= 0;
             end
         end
     end
 
-    assign stalling = (is_ls | during_ls) & ~ls_done;
+    assign stalling = (is_ls | during_ls) & ~ls_done & ~jmp_dly;
 
     //always @(posedge clk or negedge rstb) begin
     //    if(~rstb) begin
@@ -40,9 +41,17 @@ module xrv_ctrl(
     //    end
     //end
 
-    assign jmp = id_jmp | ex_jmp;
-    assign jmp_addr = id_jmp ? id_jmp_addr : ex_jmp_addr;
+    always @(posedge clk or negedge rstb) begin
+        if(~rstb) begin
+            jmp_dly <= 0;
+        end else begin
+            jmp_dly <= jmp;
+        end
+    end 
 
-    assign flush = jmp;
+    assign jmp = id_jmp | ex_jmp;
+    assign jmp_addr = ex_jmp ? ex_jmp_addr : id_jmp_addr;
+
+    assign flush = ex_jmp;
 
 endmodule
