@@ -1,17 +1,19 @@
 `timescale 1ns/10ps
 
 module tb_mul_div;
-    localparam PERIOD = 1;
-    logic        clk;
-    logic        rstb;
-    logic [31:0] a;
-    logic [31:0] b;
-    logic        valid;
-    logic [5:0]  cnt;
-    logic [2:0]  optype;
-    logic [31:0] result_mult;
-    logic [31:0] result_div;
-    wire         result_valid;
+    localparam real PERIOD = 1.0;
+    logic               clk;
+    logic               rstb;
+    logic signed [31:0] a;
+    logic signed [31:0] b;
+    logic               valid;
+    logic        [5:0]  cnt;
+    logic        [2:0]  optype;
+    logic        [31:0] result_mult;
+    logic        [31:0] result_div;
+    wire                result_valid;
+
+    always #(PERIOD/2) clk = ~clk;
 
     always @(posedge clk or negedge rstb) begin
         if(~rstb) begin
@@ -29,40 +31,37 @@ module tb_mul_div;
 
     always @(posedge clk) begin
         if(cnt == 'h3F) begin
-            valid <= 0;
+            valid <= 1;
             a <= $urandom_range(0,32'hffff_ffff);
             b <= $urandom_range(0,32'hffff_ffff);
             optype <= $urandom_range(0,7);
         end else begin
-            valid <= 1;
+            valid <= 0;
         end
     end 
 
-    wire mul_valid = valid & (optype < 6);
-    wire div_valid = valid & (optype >= 6);
 
 xrv_mult U_XRV_MULT(
     .clk(clk),
     .rstb(rstb),
     .a(a),
     .b(b),
-    .mult_type(optype),
-    .valid(mul_valid),
+    .optype(optype),
+    .valid(~optype[2]&valid),
 
     .result(result_mult),
-    .result_valid(result_valid)
+    .result_valid(result_mult_valid)
 );
 
-xrv_div(
+xrv_div U_XRV_DIV(
     .clk(clk),
     .rstb(rstb),
-    .dividend(dividend),
-    .divisor(divisor),
-    .is_div_sign(is_div_sign),
-    .optype(optype), //0: div; 1: rem
-    .valid(valid),
+    .dividend(a),
+    .divisor(b),
+    .optype(optype),
+    .valid(optype[2]&valid),
     .result(result_div),
-    .result_valid(result_valid)
+    .result_valid(result_div_valid)
 );
 
 

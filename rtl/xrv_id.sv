@@ -31,7 +31,7 @@ module xrv_id(
     output logic [4:0]          src2,
     output logic [4:0]          dest,
     output logic [2:0]          funct3,
-    output logic                funct7_bit5,
+    output logic [6:0]          funct7,
 
     output logic [31:0]         ex_pc,
     output logic [31:0]         ex_pc_auipc,
@@ -44,16 +44,17 @@ module xrv_id(
     localparam logic [31:0] ALL0 = 32'h0;
     localparam logic [31:0] ALL1 = 32'hFFFF_FFFF; 
 
-    wire [4:0] opcode = inst[6:2];
-    wire is_op_lui    = (opcode == `OP_LUI)   ;
-    wire is_op_auipc  = (opcode == `OP_AUIPC) ;
-    wire is_op_jal    = (opcode == `OP_JAL)   ;
-    wire is_op_jalr   = (opcode == `OP_JALR)  ;
-    wire is_op_branch = (opcode == `OP_BRANCH);
-    wire is_op_load   = (opcode == `OP_LOAD)  ;
-    wire is_op_store  = (opcode == `OP_STORE) ;
-    wire is_op_imm    = (opcode == `OP_IMM)   ;
-    wire is_op_reg    = (opcode == `OP_REG)   ;
+    wire [4:0] opcode   = inst[6:2];
+    wire is_op_lui      = (opcode == `OP_LUI)       ;
+    wire is_op_auipc    = (opcode == `OP_AUIPC)     ;
+    wire is_op_jal      = (opcode == `OP_JAL)       ;
+    wire is_op_jalr     = (opcode == `OP_JALR)      ;
+    wire is_op_branch   = (opcode == `OP_BRANCH)    ;
+    wire is_op_load     = (opcode == `OP_LOAD)      ;
+    wire is_op_store    = (opcode == `OP_STORE)     ;
+    wire is_op_imm      = (opcode == `OP_IMM)       ;
+    wire is_op_reg      = (opcode == `OP_REG)       ;
+    wire is_op_mult_div = (opcode == `OP_MULT_DIV)  ;
 
     wire  decode_en = inst_valid;
 
@@ -107,7 +108,7 @@ module xrv_id(
             src2          <= inst[24:20];
             dest          <= inst[11:7];
             funct3        <= inst[14:12];
-            funct7_bit5   <= inst[30];
+            funct7        <= inst[31:25];
         end
     end
 

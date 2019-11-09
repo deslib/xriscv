@@ -3,8 +3,7 @@ module xrv_div(
     input               rstb,
     input        [31:0] dividend,
     input        [31:0] divisor,
-    input               is_div_sign,
-    input               optype, //0: div; 1: rem
+    input        [2:0]  optype, //0: div; 1: rem
     input               valid,
     output logic [31:0] result,
     output logic        result_valid
@@ -15,27 +14,21 @@ module xrv_div(
     logic [31:0] divisor_reg;
     logic        sign_reg;
     logic        calc_en;
-    logic        optype_reg;
     logic [4:0]  calc_cnt;
+    wire is_unsign = optype[0]; 
 
-    wire [31:0] dividend_abs = is_div_sign ? 
-                                (dividend[31] ? {1'b0,(~dividend[30:0] + 31'h1)} : 
-                                               {1'b0,dividend[30:0]}) :
-                                dividend[31:0];
-    wire [31:0] divisor_abs  = is_div_sign ? 
-                                (divisor[31] ? {1'b0,(~divisor[30:0] + 31'h1)} : 
-                                               {1'b0,divisor[30:0]}) :
-                                divisor[31:0];
-    wire        sign         = is_div_sign ? dividend[31] ^ divisor[31] : 1'b0;
-    wire [31:0] remainder_h  = remainder[63:32] - divisor;
+    wire [31:0] dividend_abs = is_unsign ?  dividend[31:0] :
+                                            (dividend[31] ? -dividend : dividend[31:0]) ;
+    wire [31:0] divisor_abs  = is_unsign ?  divisor[31:0] :
+                                            (divisor[31] ? -divisor : divisor[31:0]) ;
+    wire        sign         = is_unsign ? 1'b0 : dividend[31] ^ divisor[31];
+    wire [31:0] remainder_h  = remainder[63:32] - divisor_reg;
     always @(posedge clk) begin
         if(valid) begin
             remainder    <= dividend_abs << 1;
             divisor_reg  <= divisor_abs;
             sign_reg     <= sign;
             quotient     <= 0;
-            remainder    <= dividend_abs << 1;
-            optype_reg   <= 1;
         end else begin
             if(calc_en) begin
                 if(remainder[63:32] >= divisor_reg) begin
@@ -76,11 +69,11 @@ module xrv_div(
     always @(posedge clk or negedge rstb) begin
         if(~rstb) begin
             result_valid <= 0;
-            result <= 0;
         end else begin
             result_valid <= (calc_cnt == 5'h1f)&calc_en;
-            result <= optype_reg ? remainder : quotient;
         end
     end 
+    assign result = optype[1] ? (sign_reg ? - remainder[63:33] : remainder[63:33]) : 
+                                (sign_reg ? - quotient : quotient);
 
 endmodule

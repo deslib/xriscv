@@ -1,9 +1,15 @@
+`include "glb.svh"
+
 module xrv_ctrl(
     input               clk,
     input               rstb,
 
     input               is_ls,
     input               ls_done,       //load/store done
+    `ifdef EN_MULT_DIV
+    input               is_mult_div,
+    input               mult_div_done,
+    `endif
     input               id_jmp,
     input        [31:0] id_jmp_addr,
     input               ex_jmp,
@@ -15,21 +21,28 @@ module xrv_ctrl(
     output logic [31:0] jmp_addr
 );
 
-    logic during_ls;
+    logic during_stalling;
     logic jmp_dly;
+    `ifdef EN_MULT_DIV
+    wire stall_start = is_ls | is_mult_div;
+    wire stall_end = ls_done | mult_div_done;
+    `else
+    wire stall_start = is_ls;
+    wire stall_end = ls_done;
+    `endif
     always @(posedge clk or negedge rstb) begin
         if(~rstb) begin
-            during_ls <= 0;
+            during_stalling <= 0;
         end else begin
-            if(is_ls&~jmp&~jmp_dly) begin
-                during_ls <= 1;
-            end else if(ls_done|jmp|jmp_dly) begin  //ls follow an jalr. jmp is later than is_ls
-                during_ls <= 0;
+            if((stall_start)&~jmp&~jmp_dly) begin
+                during_stalling <= 1;
+            end else if(stall_end|jmp|jmp_dly) begin  //ls follow an jalr. jmp is later than is_ls
+                during_stalling <= 0;
             end
         end
     end
 
-    assign stalling = (is_ls | during_ls) & ~ls_done & ~jmp_dly;
+    assign stalling = (stall_start| during_stalling) & ~stall_end & ~jmp_dly;
 
     //always @(posedge clk or negedge rstb) begin
     //    if(~rstb) begin

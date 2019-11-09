@@ -9,6 +9,9 @@ module xrv_ex(
     output logic                ex_jmp,
     output logic [31:0]         ex_jmp_addr,
     output                      ls_done,
+    `ifdef EN_MULT_DIV
+    output logic                mult_div_done,
+    `endif
 
     input                       ex_valid,
     input        [31:0]         ex_pc,
@@ -31,7 +34,7 @@ module xrv_ex(
     input        [4:0]          src1,
     input        [4:0]          src2,
     input        [4:0]          dest,
-    input                       funct7_bit5,
+    input        [6:0]          funct7,
     input        [2:0]          funct3,
 
     output logic [31:0]         d_addr,
@@ -48,6 +51,12 @@ module xrv_ex(
     localparam logic [31:0] ALL1 = 32'hFFFF_FFFF; 
 
     logic ld_done;
+    `ifdef EN_MULT_DIV
+        logic [31:0] result_mult;
+        logic [31:0] result_div;
+        logic result_mult_valid;
+        logic result_div_valid;
+    `endif
 
     wire funct3_is_0 = funct3 == 3'd0;
     wire funct3_is_1 = funct3 == 3'd1;
@@ -57,6 +66,9 @@ module xrv_ex(
     wire funct3_is_5 = funct3 == 3'd5;
     wire funct3_is_6 = funct3 == 3'd6;
     wire funct3_is_7 = funct3 == 3'd7;
+    wire funct7_bit5 = funct7[5];
+    wire funct7_is_1 = funct7 == 7'h1;
+
 
 
     (* ram_style = "distributed" *) logic [31:0] x_reg[0:31];
@@ -117,7 +129,7 @@ module xrv_ex(
         if(~rstb) begin
             ex_imm_reg <= 0;
         end else begin
-            ex_imm_reg <= ex_en & (op_imm|op_reg);
+            ex_imm_reg <= ex_en & (op_imm|(op_reg&~funct7_is_1));
         end
     end 
 
@@ -133,7 +145,7 @@ module xrv_ex(
                                                    operand1 & operand2;
     end
     `else
-        assign ex_imm_reg = ex_en & (op_imm | op_reg);
+        assign ex_imm_reg = ex_en & (op_imm | (op_reg & ~funct7_is_1));
         always @(*) begin
             operand1_minus_operand2 = operand1 - operand2;
             operand1_plus_operand2  = operand1 + operand2;
@@ -156,15 +168,23 @@ module xrv_ex(
                 dest_reg_val = dest_reg_op_load;
                 dest_reg_wr_en = dest_not0;
                 `LOG_CORE($sformatf("PC=%05x OP_LOAD %08x from %08x\n", ex_pc, d_rd_data, d_addr));
+            `ifdef EN_MULT_DIV
+            end else if(result_mult_valid) begin
+                dest_reg_val = result_mult;
+                dest_reg_wr_en = dest_not0;
+            end else if(result_div_valid) begin
+                dest_reg_val = result_div;
+                dest_reg_wr_en = dest_not0;
+            `endif
             end else if(ex_imm_reg) begin
-                if(op_imm|op_reg) begin
+                //if(op_imm|op_reg) begin
                     dest_reg_val = funct3_is_0 ? ( (funct7_bit5&op_reg) ? operand1_minus_operand2 : operand1_plus_operand2) :
                                    funct3_is_1 ? operand_ls :
                                    funct3_is_5 ? operand_rs :
                                    funct3_is_2 ? {31'h0,operand1_lt_operand2} :
                                    funct3_is_3 ? {31'h0,operand1_lt_operand2_u} : dest_reg_op_imm_or_op_reg;
                     dest_reg_wr_en = dest_not0;
-                end
+                //end
             end else if(ex_en) begin
                 if(op_lui) begin
                     dest_reg_val = imm_signed;
@@ -318,5 +338,40 @@ module xrv_ex(
     end 
 
     assign ls_done = ld_done | (d_wr_req&d_wr_ready);
+
+    `ifdef EN_MULT_DIV
+    wire mult_valid = ex_valid & op_reg & funct7_is_1 & ~funct3[2];
+    wire div_valid = ex_valid & op_reg & funct7_is_1 & funct3[2];
+    xrv_mult U_XRV_MULT(
+        .clk(clk),
+        .rstb(rstb),
+        .a(operand1),
+        .b(operand2),
+        .optype(funct3),
+        .valid(mult_valid),
+    
+        .result(result_mult),
+        .result_valid(result_mult_valid)
+    );
+    
+    xrv_div U_XRV_DIV(
+        .clk(clk),
+        .rstb(rstb),
+        .dividend(operand1),
+        .divisor(operand2),
+        .optype(funct3),
+        .valid(div_valid),
+        .result(result_div),
+        .result_valid(result_div_valid)
+    );
+
+    always @(posedge clk or negedge rstb) begin
+        if(~rstb) begin
+            mult_div_done <= 0;
+        end else begin
+            mult_div_done <= result_mult_valid | result_div_valid;
+        end
+    end 
+    `endif
      
 endmodule

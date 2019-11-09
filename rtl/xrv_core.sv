@@ -23,6 +23,7 @@ module xrv_core(
     logic [31:0] inst;
     logic [31:0] inst_pc;
     logic [2:0]  funct3;
+    logic [6:0]  funct7;
     logic ls_done;
     logic id_jmp;
     logic [31:0] id_jmp_addr;
@@ -54,6 +55,10 @@ module xrv_core(
         .rstb(rstb),
         .is_ls(is_ls),
         .ls_done(ls_done),
+        `ifdef EN_MULT_DIV
+        .is_mult_div(is_mult_div),
+        .mult_div_done(mult_div_done),
+        `endif
         .id_jmp(id_jmp),
         .id_jmp_addr(id_jmp_addr),
         .ex_jmp(ex_jmp),
@@ -73,6 +78,9 @@ module xrv_core(
         .i_addr(i_addr),
         .i_data(i_data),
         .is_ls(is_ls),
+        `ifdef EN_MULT_DIV
+        .is_mult_div(is_mult_div),
+        `endif
         .inst(inst),
         .inst_valid(inst_valid),
         .inst_is_compressed(inst_is_compressed),
@@ -108,7 +116,7 @@ module xrv_core(
         .src2(src2),
         .dest(dest),
         .funct3(funct3),
-        .funct7_bit5(funct7_bit5),
+        .funct7(funct7),
 
         .ex_pc(ex_pc),
         .ex_pc_auipc(ex_pc_auipc),
@@ -125,6 +133,9 @@ module xrv_core(
         .ex_jmp(ex_jmp),
         .ex_jmp_addr(ex_jmp_addr),
         .ls_done(ls_done),
+        `ifdef EN_MULT_DIV
+        .mult_div_done(mult_div_done),
+        `endif
     
         .ex_valid(ex_valid),
         .ex_pc(ex_pc),
@@ -148,7 +159,7 @@ module xrv_core(
         .src2(src2),
         .dest(dest),
         .funct3(funct3),
-        .funct7_bit5(funct7_bit5),
+        .funct7(funct7),
     
         .d_addr(d_addr),
         .d_wr_req(d_wr_req),

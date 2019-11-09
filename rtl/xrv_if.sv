@@ -14,6 +14,9 @@ module xrv_if(
     output logic [31:0] i_addr,
 
     output logic        is_ls,
+    `ifdef EN_MULT_DIV
+    output logic        is_mult_div,
+    `endif
     output logic [31:0] inst,
     output logic [31:0] inst_pc,
     output logic        inst_is_compressed,
@@ -164,6 +167,20 @@ module xrv_if(
             end
         end
     end
+
+    `ifdef EN_MULT_DIV
+    always @(posedge clk or negedge rstb) begin
+        if(~rstb) begin
+            is_mult_div <= 0;
+        end else begin
+            if(i_data_rd_en) begin
+                is_mult_div <= (inst_decompress[6:2] == `OP_MULT_DIV && inst_decompress[31:25] == 'h1) & ~inst_is_compressed;
+            end else begin
+                is_mult_div <= 0;
+            end
+        end
+    end 
+    `endif
 
 /*******************************************************************************
 *   inst valid control

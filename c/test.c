@@ -202,8 +202,25 @@ void test_csr(){
     }
 }
 
+void test_mult_div(){
+    i32 a;
+    i32 b;
+    i32 c;
+    i32 d;
+    i32 i;
+    for(i=0;i<10;i++){
+        a = 10;
+        b = 20;
+        c = a * b;
+        printf("%d * %d = %d\n",a,b,c);
+        d = c/3;
+        printf("%d / %d = %d\n",c,3,d);
+    }
+}
+
 void test(){
     xuart_puts("Hello XRISCV!\n");
+    test_mult_div();
     test_imm();
     test_uiapc();
     test_load();

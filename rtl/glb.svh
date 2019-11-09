@@ -1,6 +1,7 @@
 `ifndef __GLB__
 
 //`define OP_IMM_REG_2_STAGE
+`define EN_MULT_DIV
 
 `define UART
 
@@ -13,6 +14,7 @@
 `define OP_STORE    5'b01_000
 `define OP_IMM      5'b00_100
 `define OP_REG      5'b01_100
+`define OP_MULT_DIV 5'b01_100
 
 //add or sub
 `define ALU_AOS     3'b000
