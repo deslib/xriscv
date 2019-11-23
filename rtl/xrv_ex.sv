@@ -347,7 +347,7 @@ module xrv_ex(
         .rstb(rstb),
         .a(operand1),
         .b(operand2),
-        .optype(funct3),
+        .optype(funct3[1:0]),
         .valid(mult_valid),
     
         .result(result_mult),
@@ -359,7 +359,7 @@ module xrv_ex(
         .rstb(rstb),
         .dividend(operand1),
         .divisor(operand2),
-        .optype(funct3),
+        .optype(funct3[1:0]),
         .valid(div_valid),
         .result(result_div),
         .result_valid(result_div_valid)

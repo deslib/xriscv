@@ -208,7 +208,14 @@ void test_mult_div(){
     i32 c;
     i32 d;
     i32 i;
+    u32 ua;
+    u32 ub;
+    u32 f;
     for(i=0;i<10;i++){
+        ua = 0xffffffff;
+        ub = 0xffffffff;
+        f = ua * ub;
+        printf("%u * %u = %u\n",ua,ub,f);
         a = 10;
         b = 20;
         c = a * b;

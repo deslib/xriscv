@@ -3,7 +3,7 @@ module xrv_div(
     input               rstb,
     input        [31:0] dividend,
     input        [31:0] divisor,
-    input        [2:0]  optype, //0: div; 1: rem
+    input        [1:0]  optype, // bit 1: 0:div, 1:rem; bit0: 0:sign, 1:unsign;
     input               valid,
     output logic [31:0] result,
     output logic        result_valid
@@ -73,7 +73,7 @@ module xrv_div(
             result_valid <= (calc_cnt == 5'h1f)&calc_en;
         end
     end 
-    assign result = optype[1] ? (sign_reg ? - remainder[63:33] : remainder[63:33]) : 
-                                (sign_reg ? - quotient : quotient);
+    assign result = optype[1] ? (sign_reg ? divisor_reg - remainder[63:33] : remainder[63:33]) : 
+                                (sign_reg ? -1 - quotient : quotient);
 
 endmodule

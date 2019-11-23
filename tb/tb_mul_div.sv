@@ -32,13 +32,37 @@ module tb_mul_div;
     always @(posedge clk) begin
         if(cnt == 'h3F) begin
             valid <= 1;
-            a <= $urandom_range(0,32'hffff_ffff);
-            b <= $urandom_range(0,32'hffff_ffff);
-            optype <= $urandom_range(0,7);
         end else begin
             valid <= 0;
         end
     end 
+
+    always @(posedge clk or negedge rstb) begin
+        if(~rstb) begin
+            optype <= 0;
+        end else begin
+            if(result_valid) begin
+                optype <= optype + 1;
+            end
+        end
+    end 
+
+    always @(*) begin
+        case(optype)
+            0: begin
+                a = 32'h25;
+                b = 32'h34;
+            end
+            1,2,3: begin
+                a = 32'hf5008456;
+                b = 32'hf7239485;
+            end
+            4,5,6,7: begin
+                a = 32'hf0e94047;
+                b = 32'h230;
+            end
+        endcase
+    end
 
 
 xrv_mult U_XRV_MULT(
@@ -63,6 +87,8 @@ xrv_div U_XRV_DIV(
     .result(result_div),
     .result_valid(result_div_valid)
 );
+
+assign result_valid = result_mult_valid | result_div_valid;
 
 
 endmodule
