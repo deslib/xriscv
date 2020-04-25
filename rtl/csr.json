@@ -1,0 +1,66 @@
+[
+    {
+        "name": "mstatus",
+        "offset": "'h300",
+        "fields":[
+            { "bits": 3, "name": "mie", "attr" : "rw", "default": "0","desc": "machine mode interrupt enable"},
+            { "bits": 7, "name": "mpie", "attr" : "rw", "default": "0","desc": "previous interrupt enable before the trap"}
+        ]
+    },
+    {
+        "name": "misa",
+        "offset": "'h301",
+        "fields":[
+            { "bits": [31:0], "name": "misa", "attr" : "ro", "default": "0x40001124","desc": "machine isa support"}
+        ]
+    },
+    {
+        "name": "mie",
+        "offset": "'h304",
+        "fields":[
+            { "bits": 3, "name": "msie", "attr" : "rw", "default": "0","desc": "machine mode software interrupt enable"},
+            { "bits": 7, "name": "mtie", "attr" : "rw", "default": "0","desc": "machine mode timer interrupt enable"},
+            { "bits": 11, "name": "meie", "attr" : "rw", "default": "0","desc": "machine mode external interrupt enable"}
+        ]
+    },
+    {
+        "name": "mtvec",
+        "offset": "'h305",
+        "fields":[
+            { "bits": [31,2], "name": "mtvec", "attr" : "rw", "default": "0","desc": "machine trap base address"},
+            { "bits": 0, "name": "mode", "attr" : "ro", "default": "1","desc": "machine trap address mode. Fix as vector"}
+        ]
+    },
+    {
+        "name": "mscratch",
+        "offset": "'h340",
+        "fields":[
+            { "bits": [31,0], "name": "mscratch", "attr" : "rw", "default": "0","desc": "machine scratch"}
+        ]
+    },
+    {
+        "name": "mepc",
+        "offset": "'h341",
+        "fields":[
+            { "bits": [31,1], "name": "mepc", "attr" : "rw", "default": "0","desc": "machine exception pc"}
+        ]
+    },
+    {
+        "name": "mcause",
+        "offset": "'h342",
+        "fields":[
+            { "bits": 31, "name": "is_itr", "attr" : "rw", "default": "0","desc": "machine trap is interrupt"},
+            { "bits": [30,0], "name": "mcause", "attr" : "rw", "default": "0","desc": "machine trap cause"}
+        ]
+    },
+    {
+        "name": "mip",
+        "offset": "'h344",
+        "fields":[
+            { "bits": 3, "name": "msip", "attr" : "rw", "default": "0","desc": "machine mode software interrupt pending"},
+            { "bits": 7, "name": "mtip", "attr" : "rw", "default": "0","desc": "machine mode timer interrupt pending"},
+            { "bits": 11, "name": "meip", "attr" : "rw", "default": "0","desc": "machine mode external interrupt pending"}
+        ]
+    }
+
+]
